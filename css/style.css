@@ -1,0 +1,139 @@
+/* ===================================================
+   KodiKids Platform Edukasi Koding - Custom Stylesheet
+   =================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+  --color-candy: #2563EB;
+  --color-candy-dark: #1D4ED8;
+  --color-mint: #10B981;
+  --color-mint-dark: #059669;
+  --color-warmamber: #F59E0B;
+  --color-warmamber-dark: #D97706;
+  --color-coral: #F43F5E;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, .font-fun {
+  font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Scrollbar Hider */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 3D Pop Push-able Button */
+.btn-pop {
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.btn-pop:hover {
+  filter: brightness(1.05);
+}
+.btn-pop:active {
+  transform: translateY(3px) scale(0.98);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 3D Button Shadow Presets */
+.shadow-pop-blue {
+  box-shadow: 0 4px 0 #1D4ED8;
+}
+.shadow-pop-green {
+  box-shadow: 0 4px 0 #059669;
+}
+.shadow-pop-amber {
+  box-shadow: 0 4px 0 #D97706;
+}
+.shadow-pop-coral {
+  box-shadow: 0 4px 0 #BE123C;
+}
+.shadow-pop-slate {
+  box-shadow: 0 4px 0 #475569;
+}
+.shadow-pop-indigo {
+  box-shadow: 0 4px 0 #4338CA;
+}
+
+/* Bujur Sangkar Grid Cell (Aspect Ratio 1:1) */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Floating Animations */
+@keyframes floatMascot {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+.animate-float-mascot {
+  animation: floatMascot 4s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px #F59E0B);
+  }
+  50% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 10px #F59E0B);
+  }
+}
+.animate-sparkle {
+  animation: sparkle 1.6s ease-in-out infinite;
+}
+
+@keyframes scaleUp {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-scale-up {
+  animation: scaleUp 0.22s ease-out forwards;
+}
+
+/* Print Styling for Certificate */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #certificate-printable-area,
+  #certificate-printable-area * {
+    visibility: visible;
+  }
+  #certificate-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    border-width: 6px !important;
+  }
+  #cert-locked-overlay,
+  .no-print {
+    display: none !important;
+  }
+}
