@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>KodiKids - Belajar Koding Jadi Seru!</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            candy: { DEFAULT: '#2563EB', dark: '#1D4ED8', light: '#DBEAFE' },
+            mint: { DEFAULT: '#10B981', dark: '#059669', light: '#D1FAE5' },
+            warmamber: { DEFAULT: '#F59E0B', dark: '#D97706', light: '#FEF3C7' },
+            coral: { DEFAULT: '#F43F5E', dark: '#E11D48', light: '#FFE4E6' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS Modular -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="bg-sky-50/50 text-slate-800 font-sans antialiased overflow-x-hidden min-h-screen selection:bg-blue-600 selection:text-white">
+
+  <!-- ====================================================================
+       1. HEADER & NAVBAR
+       ==================================================================== -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-sm no-print">
+    <div class="flex items-center justify-between px-3 md:px-6 py-2.5 max-w-7xl mx-auto">
+      
+      <!-- Brand Logo -->
+      <a class="flex items-center gap-2 sm:gap-3 group focus:outline-none rounded-2xl" href="#beranda">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
+          <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="10" rx="3" width="18" x="3" y="11"></rect>
+            <circle cx="12" cy="5" r="2"></circle>
+            <path d="M12 7v4"></path>
+            <line x1="8" x2="8" y1="16" y2="16.01"></line>
+            <line x1="16" x2="16.01" y1="16" y2="16"></line>
+            <path d="M9 19h6"></path>
+            <path d="M2 15h1"></path>
+            <path d="M21 15h1"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-xl sm:text-2xl font-bold font-fun tracking-tight text-blue-600">KodiKids</span>
+            <span class="bg-amber-400 text-amber-950 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">EDISI SD</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Arena Koding & Logika Ceria</p>
+        </div>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-1.5 lg:gap-3 text-xs lg:text-sm font-bold text-slate-600 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#beranda">Beranda</a>
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#materi">Materi</a>
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#arena">Arena Koding</a>
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#kuis">Kuis Logika</a>
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#tanya-kodi">Tanya Kodi</a>
+        <a class="px-3 py-1.5 rounded-xl hover:text-blue-600 hover:bg-white transition-all" href="#sertifikat">Sertifikat</a>
+      </nav>
+
+      <!-- Right Header: Star Chip & Auth Action Button -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center gap-1.5 bg-amber-100 text-amber-900 px-3 py-1.5 rounded-full text-xs font-bold border border-amber-300 shadow-sm" title="Bintang yang terkumpul">
+          <span>⭐</span>
+          <span id="header-star-count" class="font-extrabold text-sm text-amber-950">0</span>
+          <span class="hidden xs:inline">Bintang</span>
+        </div>
+        <button class="btn-pop px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-xl font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-pop-blue flex items-center gap-1.5" onclick="openAuthModal()">
+          <span>Masuk / Daftar</span>
+          <span>🚀</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Horizontal Nav -->
+    <div class="flex md:hidden items-center gap-1.5 overflow-x-auto whitespace-nowrap py-1.5 px-3 border-t border-slate-100 no-scrollbar text-xs font-bold text-slate-600">
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#beranda">Beranda</a>
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#materi">Materi</a>
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#arena">Arena Koding</a>
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#kuis">Kuis Logika</a>
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#tanya-kodi">Tanya Kodi</a>
+      <a class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white transition-colors" href="#sertifikat">Sertifikat</a>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       MAIN CONTAINER
+       ==================================================================== -->
+  <main class="w-full max-w-7xl mx-auto px-3 sm:px-6 py-6 space-y-12 sm:space-y-16">
+
+    <!-- ====================================================================
+         2. BAGIAN BERANDA (HERO SECTION & KARTU BENTO)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-6" id="beranda">
+      <div class="flex flex-col-reverse lg:flex-row items-center justify-between gap-6 p-6 sm:p-8 lg:p-12 text-center lg:text-left bg-gradient-to-br from-blue-500/10 via-sky-100/50 to-indigo-50/30 rounded-3xl border-2 border-sky-100 shadow-sm mt-2">
+        <div class="w-full lg:max-w-2xl space-y-4">
+          <div class="inline-flex items-center gap-2 bg-white border border-blue-200 px-3.5 py-1.5 rounded-full shadow-sm text-blue-600 font-bold text-xs sm:text-sm">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Platform Belajar Koding Interaktif Nomor 1 Anak SD
+          </div>
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight text-slate-900 font-fun">
+            Belajar Koding Jadi Seru<br />
+            <span class="text-blue-600 underline decoration-amber-400 decoration-wavy decoration-2">Seperti Bermain Game!</span>
+          </h1>
+          <p class="text-sm sm:text-base text-slate-600 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            Kuasai logika berpikir komputer lewat tantangan labirin robot interaktif, kuis seru, dan teman pintar robot Kodi.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto mt-6">
+            <a class="btn-pop w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-extrabold shadow-pop-blue flex items-center justify-center gap-2 text-sm sm:text-base" href="#arena">
+              <span>🚀</span>
+              <span>Mulai Arena Koding</span>
+            </a>
+            <a class="btn-pop w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm sm:text-base shadow-sm" href="#materi">
+              <span>📖</span>
+              <span>Buka Materi Cerita</span>
+            </a>
+          </div>
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs font-bold text-slate-500 pt-2">
+            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg> Tanpa Instalasi Software</span>
+            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg> 100% Aman & Ramah Anak</span>
+            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg> Sertifikat Digital Resmi</span>
+          </div>
+        </div>
+
+        <!-- Mascot Display -->
+        <div class="flex flex-col items-center justify-center flex-shrink-0">
+          <div class="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center animate-float-mascot">
+            <div class="absolute inset-0 bg-blue-500/15 rounded-full filter blur-md"></div>
+            <div class="absolute inset-3 bg-white/80 rounded-full border-4 border-dashed border-blue-300"></div>
+            <div class="relative z-10 w-44 h-44 sm:w-48 sm:h-48 bg-blue-600 rounded-3xl p-3 sm:p-4 shadow-xl border-4 border-white flex flex-col items-center justify-center">
+              <div class="flex flex-col items-center -mt-5 mb-1">
+                <div class="w-4 h-4 bg-amber-400 rounded-full border-2 border-white shadow-sm animate-bounce"></div>
+                <div class="w-1.5 h-3 bg-white rounded-full"></div>
+              </div>
+              <div class="w-full bg-slate-900 rounded-2xl p-2.5 sm:p-3 border-2 border-blue-200 flex flex-col items-center justify-center gap-1.5 sm:gap-2">
+                <div class="flex items-center gap-5">
+                  <div class="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center shadow-inner">
+                    <div class="w-2 h-2 bg-white rounded-full self-start mr-0.5 mt-0.5"></div>
+                  </div>
+                  <div class="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center shadow-inner">
+                    <div class="w-2 h-2 bg-white rounded-full self-start mr-0.5 mt-0.5"></div>
+                  </div>
+                </div>
+                <div class="w-10 h-3 border-b-4 border-amber-400 rounded-full mt-0.5"></div>
+              </div>
+              <div class="mt-2 bg-white text-blue-600 font-fun font-bold text-xs px-3 py-0.5 rounded-full shadow-sm">
+                Halo, Aku Kodi!
+              </div>
+            </div>
+            <div class="absolute top-1 right-1 bg-amber-400 text-amber-950 font-fun font-bold text-[11px] px-2.5 py-1 rounded-2xl shadow-lg border-2 border-white flex items-center gap-1 animate-pulse">
+              <span>⭐ Robot Cilik</span>
+            </div>
+          </div>
+          <p class="text-xs font-semibold text-slate-500 mt-1">Kodi si Robot Pendamping Koding</p>
+        </div>
+      </div>
+
+      <!-- Bento Features Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <a class="block bg-white p-4 sm:p-5 rounded-2xl border-2 border-slate-200 hover:border-blue-500 shadow-sm hover:shadow-md transition-all group" href="#arena">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition-transform">🧩</div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800 font-fun group-hover:text-blue-600 transition-colors">Balok Koding Visual</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed hidden sm:block">Susun balok perintah arah seperti menyusun puzzle balok mainan tanpa pusing kode rumit.</p>
+          <div class="mt-2 sm:mt-3 flex items-center text-[11px] sm:text-xs font-bold text-blue-600 gap-1">
+            <span>Buka Arena</span>
+            <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          </div>
+        </a>
+        <a class="block bg-white p-4 sm:p-5 rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 shadow-sm hover:shadow-md transition-all group" href="#materi">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition-transform">💡</div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800 font-fun group-hover:text-emerald-700 transition-colors">3 Jurus Logika Anak</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed hidden sm:block">Pahami sekuens, percabangan, dan perulangan lewat dongeng kegiatan sehari-hari yang seru.</p>
+          <div class="mt-2 sm:mt-3 flex items-center text-[11px] sm:text-xs font-bold text-emerald-600 gap-1">
+            <span>Baca Cerita</span>
+            <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          </div>
+        </a>
+        <a class="block bg-white p-4 sm:p-5 rounded-2xl border-2 border-amber-200 hover:border-amber-500 shadow-sm hover:shadow-md transition-all group" href="#kuis">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition-transform">🏆</div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800 font-fun group-hover:text-amber-700 transition-colors">Kuis Gamifikasi</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed hidden sm:block">Jawab 5 tantangan logika berhadiah bintang prestasi emas dan kumpulkan poinmu sekarang.</p>
+          <div class="mt-2 sm:mt-3 flex items-center text-[11px] sm:text-xs font-bold text-amber-600 gap-1">
+            <span>Ikuti Kuis</span>
+            <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          </div>
+        </a>
+        <a class="block bg-white p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 hover:border-indigo-500 shadow-sm hover:shadow-md transition-all group" href="#tanya-kodi">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition-transform">🤖</div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800 font-fun group-hover:text-indigo-600 transition-colors">Tanya Kodi AI</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed hidden sm:block">Punya rasa ingin tahu tentang koding? Tanyakan langsung pada robot Kodi dengan bahasa santai.</p>
+          <div class="mt-2 sm:mt-3 flex items-center text-[11px] sm:text-xs font-bold text-indigo-600 gap-1">
+            <span>Sapa Kodi</span>
+            <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         3. BAGIAN MODUL BELAJAR (3 KARTU MATERI DENGAN BADGE UTUH)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-6" id="materi">
+      <div class="text-center max-w-3xl mx-auto space-y-2 px-2">
+        <span class="bg-emerald-100 text-emerald-800 font-bold text-xs uppercase tracking-widest px-3.5 py-1 rounded-full border border-emerald-300">
+          Modul Belajar Ramah Anak
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-fun">3 Jurus Sakti Berpikir Logika Koding</h2>
+        <p class="text-slate-600 text-xs sm:text-sm">
+          Komputer bekerja mengikuti instruksi jelas. Mari pelajari 3 pilar utama lewat kegiatan yang sering kita lakukan setiap hari!
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Card 1: Sekuens -->
+        <div class="bg-white rounded-3xl border-2 border-blue-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -top-4 -right-4 w-28 h-28 bg-blue-100/40 rounded-full pointer-events-none z-0"></div>
+          <div class="relative z-10">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <span class="w-10 h-10 bg-blue-600 text-white font-fun font-bold text-xl rounded-2xl flex items-center justify-center shadow-sm">1</span>
+              <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                Sekuens (Urutan)
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900 font-fun">Resep Roti Selai Cokelat</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+              Sekuens adalah mengerjakan instruksi secara berurutan langkah demi langkah dari awal sampai selesai tanpa melompati tahap.
+            </p>
+            <div class="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+              <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+                <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+                <span>Ambil dua lembar roti tawar empuk</span>
+              </div>
+              <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+                <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                <span>Oleskan selai cokelat manis di atas roti</span>
+              </div>
+              <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+                <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+                <span>Tangkupkan roti dan siap disantap! 🍞</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between relative z-10 text-xs text-slate-500">
+            <span>Pesan: Jangan oles selai sebelum roti dibuka!</span>
+            <span class="text-xl">🥪</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Percabangan -->
+        <div class="bg-white rounded-3xl border-2 border-emerald-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -top-4 -right-4 w-28 h-28 bg-emerald-100/40 rounded-full pointer-events-none z-0"></div>
+          <div class="relative z-10">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <span class="w-10 h-10 bg-emerald-600 text-white font-fun font-bold text-xl rounded-2xl flex items-center justify-center shadow-sm">2</span>
+              <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+                Percabangan (Kondisi)
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900 font-fun">Pilihan Cuaca Hari Ini</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+              Percabangan adalah memilih tindakan berbeda tergantung kondisi yang terjadi. Dalam koding disebut logika: JIKA dan MAKA.
+            </p>
+            <div class="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+              <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-slate-700">
+                <span class="font-bold text-emerald-800">JIKA Hujan Turun:</span>
+                <p class="font-medium mt-0.5">Bawa dan buka payung warna-warni ☔</p>
+              </div>
+              <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-slate-700">
+                <span class="font-bold text-amber-800">JIKA Cuaca Cerah:</span>
+                <p class="font-medium mt-0.5">Pakai topi keren dan tabir surya 🧢</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between relative z-10 text-xs text-slate-500">
+            <span>Koding pintar selalu siap menghadapi situasi</span>
+            <span class="text-xl">🌦️</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Perulangan -->
+        <div class="bg-white rounded-3xl border-2 border-amber-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden md:col-span-2 lg:col-span-1">
+          <div class="absolute -top-4 -right-4 w-28 h-28 bg-amber-100/40 rounded-full pointer-events-none z-0"></div>
+          <div class="relative z-10">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <span class="w-10 h-10 bg-amber-500 text-white font-fun font-bold text-xl rounded-2xl flex items-center justify-center shadow-sm">3</span>
+              <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200 shadow-sm">
+                Perulangan (Loop)
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900 font-fun">Kayuh Pedal Sepeda</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+              Perulangan adalah mengulang perintah yang sama berkali-kali secara otomatis tanpa perlu menulis perintah berulang satu per satu.
+            </p>
+            <div class="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+              <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">🔁</span>
+                <span>ULANGI 10 KALI: Kayuh pedal kaki kanan & kiri</span>
+              </div>
+              <div class="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                Cukup memakai satu balok perintah <strong>ULANGI 10x</strong> daripada menulis 10 baris!
+              </div>
+            </div>
+          </div>
+          <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between relative z-10 text-xs text-slate-500">
+            <span>Hemat tenaga, cerdas bekerja</span>
+            <span class="text-xl">🚲</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         4. ARENA KODING LABIRIN 6x6 BUJUR SANGKAR (ASPECT-SQUARE)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-4" id="arena">
+      <!-- Header Playground & Level Selector dengan Tombol Panah Kiri-Kanan -->
+      <div class="bg-white p-4 sm:p-6 rounded-3xl border-2 border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="bg-blue-600 text-white text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">Playground 6x6</span>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 font-fun">Arena Koding Labirin Kodi</h2>
+            <button class="btn-pop text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1 shadow-sm" onclick="triggerVictoryDemo()" title="Uji Tampilan Dialog Kemenangan">
+              <span>✨</span>
+              <span>Uji Modal Kemenangan</span>
+            </button>
+          </div>
+          <p class="text-slate-500 text-xs sm:text-sm mt-1">Susun balok perintah arah agar Kodi berhasil menjangkau bintang emas!</p>
+        </div>
+
+        <!-- Tombol Seleksi 5 Level dengan Navigasi Panah Penggulir Horizontal -->
+        <div class="flex items-center gap-1.5 w-full md:w-auto">
+          <!-- Tombol Panah Kiri -->
+          <button class="btn-pop w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300 shadow-sm" onclick="scrollLevelStrip('left')" title="Geser ke kiri">
+            ◀
+          </button>
+          
+          <!-- Strip 5 Level -->
+          <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1 no-scrollbar shrink-0 max-w-[280px] sm:max-w-none scroll-smooth" id="level-selector-strip">
+            <button class="bg-blue-600 text-white font-bold px-3.5 py-1.5 rounded-full shadow-md text-xs shrink-0 transition-all scale-105" id="lvl-btn-1" onclick="selectLevel(1)">Level 1</button>
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-200 shrink-0 transition-all" id="lvl-btn-2" onclick="selectLevel(2)">Level 2</button>
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-200 shrink-0 transition-all" id="lvl-btn-3" onclick="selectLevel(3)">Level 3</button>
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-200 shrink-0 transition-all" id="lvl-btn-4" onclick="selectLevel(4)">Level 4</button>
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-200 shrink-0 transition-all" id="lvl-btn-5" onclick="selectLevel(5)">Level 5</button>
+          </div>
+
+          <!-- Tombol Panah Kanan -->
+          <button class="btn-pop w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300 shadow-sm" onclick="scrollLevelStrip('right')" title="Geser ke kanan">
+            ▶
+          </button>
+        </div>
+      </div>
+
+      <!-- Kontainer Utama 3 Kolom Arena (Palet, Labirin 6x6, Barisan Koding) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full items-start">
+        
+        <!-- Kolom 1: Palet 4 Balok Sekuensial -->
+        <div class="order-2 lg:order-1 bg-white p-4 sm:p-5 rounded-3xl border-2 border-slate-200 shadow-md space-y-3">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-fun font-bold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
+              <span>🧩</span> Palet Balok Perintah
+            </h3>
+            <span class="text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">Sentuh Balok</span>
+          </div>
+          <p class="text-[11px] sm:text-xs text-slate-500">Pilih balok instruksi untuk memandu Kodi:</p>
+          <div class="grid grid-cols-2 lg:grid-cols-1 gap-2.5">
+            <button class="btn-pop min-h-[48px] py-3 px-3.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-between text-white bg-blue-600 hover:bg-blue-700 shadow-pop-blue" onclick="addCommand('MAJU')">
+              <span class="flex items-center gap-2"><span>⬆️</span> Maju 1</span>
+              <span class="text-[10px] bg-blue-800/60 px-1.5 py-0.5 rounded font-mono">+1</span>
+            </button>
+            <button class="btn-pop min-h-[48px] py-3 px-3.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-between text-white bg-indigo-600 hover:bg-indigo-700 shadow-pop-indigo" onclick="addCommand('PUTAR_KANAN')">
+              <span class="flex items-center gap-2"><span>↪️</span> Kanan</span>
+              <span class="text-[10px] bg-indigo-800/60 px-1.5 py-0.5 rounded font-mono">+90°</span>
+            </button>
+            <button class="btn-pop min-h-[48px] py-3 px-3.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-between text-white bg-indigo-600 hover:bg-indigo-700 shadow-pop-indigo" onclick="addCommand('PUTAR_KIRI')">
+              <span class="flex items-center gap-2"><span>↩️</span> Kiri</span>
+              <span class="text-[10px] bg-indigo-800/60 px-1.5 py-0.5 rounded font-mono">-90°</span>
+            </button>
+            <button class="btn-pop min-h-[48px] py-3 px-3.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-between text-amber-950 bg-amber-400 hover:bg-amber-500 shadow-pop-amber" onclick="addCommand('AMBIL_BINTANG')">
+              <span class="flex items-center gap-2"><span>⭐</span> Bintang!</span>
+              <span class="text-[10px] bg-amber-300 px-1.5 py-0.5 rounded font-mono">GOAL</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Kolom 2: Grid Labirin 6x6 Bujur Sangkar (aspect-square) -->
+        <div class="order-1 lg:order-2 bg-white p-4 sm:p-5 rounded-3xl border-2 border-slate-200 shadow-md flex flex-col items-center justify-between space-y-3">
+          <div class="w-full flex items-center justify-between border-b pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span class="font-fun font-bold text-slate-800 text-sm sm:text-base" id="maze-level-title">Level 1: Garis Lurus</span>
+            </div>
+            <span class="text-[11px] sm:text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200" id="facing-indicator">Menghadap: Timur (Kanan)</span>
+          </div>
+
+          <!-- Papan Grid 6x6 Bujur Sangkar (Setiap Petak Ber-Class .aspect-square Agar Tidak Gepeng) -->
+          <div class="aspect-square w-full max-w-[320px] sm:max-w-[360px] mx-auto p-2 bg-slate-100 rounded-2xl border-4 border-slate-200 shadow-inner flex flex-col justify-between select-none">
+            <div class="grid grid-cols-6 gap-1 sm:gap-1.5 w-full h-full" id="grid-board"></div>
+          </div>
+
+          <!-- Status Baris Informasi Robot -->
+          <div class="w-full bg-slate-100 rounded-2xl p-2.5 border border-slate-200 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-lg shrink-0">🤖</div>
+            <div class="overflow-hidden">
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Status Robot Kodi:</p>
+              <p class="text-xs sm:text-sm font-extrabold text-blue-600 truncate" id="action-status-text">Kodi siap! Susun balok kodingmu.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kolom 3: Barisan Koding & Tombol Kontrol Eksekusi -->
+        <div class="order-3 lg:order-3 bg-white p-4 sm:p-5 rounded-3xl border-2 border-slate-200 shadow-md flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between border-b pb-2">
+              <h3 class="font-fun font-bold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
+                <span>📋</span> Barisan Koding
+              </h3>
+              <span class="text-[10px] sm:text-xs bg-slate-100 text-slate-700 font-bold px-2.5 py-0.5 rounded-full" id="command-count-badge">0 Perintah</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1 mb-2">Dieksekusi dari atas ke bawah:</p>
+            
+            <!-- List Balok Terurut -->
+            <div class="max-h-52 overflow-y-auto space-y-2 p-2 bg-slate-50 rounded-2xl border border-slate-200" id="command-sequence-list">
+              <div class="h-32 flex flex-col items-center justify-center text-center text-slate-400 p-2" id="empty-command-hint">
+                <span class="text-2xl mb-1">👈</span>
+                <p class="text-xs font-semibold">Belum ada balok perintah.</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Sentuh tombol balok di palet untuk menambahkan!</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button class="btn-pop w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold shadow-pop-green flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]" id="run-code-btn" onclick="executeProgram()">
+              <span>▶️</span>
+              <span>Jalankan Program!</span>
+            </button>
+            <div class="flex flex-row gap-2 w-full">
+              <button class="btn-pop flex-1 py-3 px-3 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1 min-h-[48px]" onclick="resetRobotState()">
+                <span>🔄</span>
+                <span>Reset</span>
+              </button>
+              <button class="btn-pop flex-1 py-3 px-3 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1 min-h-[48px]" onclick="clearCommands()">
+                <span>🗑️</span>
+                <span>Hapus</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         5. KUIS LOGIKA DETEKTIF CILIK (5 SOAL BERGAMBAR)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-4" id="kuis">
+      <div class="text-center max-w-2xl mx-auto space-y-1.5 px-2">
+        <span class="bg-amber-100 text-amber-900 font-bold text-xs uppercase tracking-widest px-3.5 py-1 rounded-full border border-amber-300">
+          Uji Kecerdasan Logika
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-fun">Kuis Detektif Logika Cilik (5 Tantangan)</h2>
+        <p class="text-slate-600 text-xs sm:text-sm">
+          Pecahkan teka-teki logika berikut ini dan raih bintang tambahan untuk sertifikat kelulusanmu!
+        </p>
+      </div>
+
+      <div class="max-w-2xl mx-auto bg-white rounded-3xl border-2 border-slate-200 shadow-md p-5 sm:p-7 space-y-4">
+        <!-- Progress Bar & Skor -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+            <span id="quiz-step-title">Tantangan 1 dari 5</span>
+            <span class="text-emerald-700 font-extrabold" id="quiz-score-badge">Skor: +0 Poin</span>
+          </div>
+          <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+            <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" id="quiz-progress-bar" style="width: 20%;"></div>
+          </div>
+        </div>
+
+        <!-- Kartu Soal Bergambar -->
+        <div class="bg-blue-50/80 rounded-2xl p-4 sm:p-5 border-2 border-blue-100 space-y-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl" id="quiz-question-icon">🎂</span>
+            <span class="bg-blue-600 text-white text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-md" id="quiz-question-badge">Tantangan 1: Sekuens</span>
+          </div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-900 leading-snug" id="quiz-question-text">
+            Kodi ingin membuat kue bolu yang lezat untuk pesta robot. Manakah urutan sekuens langkah yang paling benar dan logis?
+          </h3>
+        </div>
+
+        <!-- Pilihan Ganda -->
+        <div class="space-y-2.5" id="quiz-options-container"></div>
+
+        <!-- Kotak Umpan Balik -->
+        <div class="hidden p-4 rounded-2xl border-2 transition-all duration-200 space-y-1 text-xs sm:text-sm" id="quiz-feedback-box">
+          <div class="flex items-center gap-2 font-bold font-fun text-sm sm:text-base" id="feedback-headline"></div>
+          <p class="font-medium" id="feedback-detail"></p>
+        </div>
+
+        <div class="flex items-center justify-end pt-1">
+          <button class="btn-pop hidden min-h-[48px] px-5 bg-blue-600 hover:bg-blue-700 text-white font-fun font-bold text-xs sm:text-sm rounded-xl shadow-pop-blue flex items-center gap-2" id="quiz-next-btn" onclick="nextQuizQuestion()">
+            <span>Soal Selanjutnya</span>
+            <span>👉</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         6. TANYA KODI (AI LOGIC ASSISTANT)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-4" id="tanya-kodi">
+      <div class="text-center max-w-2xl mx-auto space-y-1.5 px-2">
+        <span class="bg-indigo-100 text-indigo-700 font-bold text-xs uppercase tracking-widest px-3.5 py-1 rounded-full border border-indigo-200">
+          Teman Belajar 24 Jam
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-fun">Tanya Kodi AI Buddy</h2>
+        <p class="text-slate-600 text-xs sm:text-sm">Ada kata atau istilah koding yang bikin kamu penasaran? Yuk tanyakan langsung pada Kodi!</p>
+      </div>
+
+      <div class="max-w-2xl mx-auto bg-white rounded-3xl border-2 border-slate-200 shadow-md overflow-hidden flex flex-col h-[460px] sm:h-[500px]">
+        <div class="bg-slate-900 text-white p-3.5 sm:p-4 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-lg sm:text-xl shadow-md shrink-0">🤖</div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-fun font-bold text-sm sm:text-base text-white">Kodi Logic Buddy</h4>
+                <span class="bg-emerald-500/30 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/40">Online</span>
+              </div>
+              <p class="text-[11px] text-slate-300">Robot penjelas istilah koding anak SD</p>
+            </div>
+          </div>
+          <button class="text-[11px] text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700" onclick="resetChat()">Bersihkan</button>
+        </div>
+
+        <!-- Quick chips -->
+        <div class="p-2 bg-slate-100 border-b border-slate-200 flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+          <span class="text-slate-500 font-bold whitespace-nowrap pl-1 text-[11px]">Tanya Cepat:</span>
+          <button class="btn-pop whitespace-nowrap px-2.5 py-1 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 text-xs hover:text-blue-600 shadow-sm" onclick="askPreset('Apa itu Koding?')">💡 Apa itu Koding?</button>
+          <button class="btn-pop whitespace-nowrap px-2.5 py-1 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 text-xs hover:text-blue-600 shadow-sm" onclick="askPreset('Apa itu Algoritma?')">📜 Algoritma</button>
+          <button class="btn-pop whitespace-nowrap px-2.5 py-1 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 text-xs hover:text-blue-600 shadow-sm" onclick="askPreset('Apa itu Bug?')">🐛 Bug</button>
+          <button class="btn-pop whitespace-nowrap px-2.5 py-1 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 text-xs hover:text-blue-600 shadow-sm" onclick="askPreset('Apa itu Loop?')">🔁 Loop</button>
+        </div>
+
+        <!-- Chat history -->
+        <div class="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3 bg-slate-50/70" id="chat-messages">
+          <div class="flex items-start gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-sm">🤖</div>
+            <div class="max-w-[85%] bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-xs sm:text-sm text-slate-800 space-y-0.5">
+              <p class="font-bold text-blue-600 text-[11px]">Kodi</p>
+              <p>Halo sahabat kecil! Aku Kodi, robot pemandu kodingmu. Ada kata atau logika koding yang ingin kamu tanyakan hari ini? Klik tombol pertanyaan cepat di atas atau ketik langsung di bawah ya!</p>
+            </div>
+          </div>
+        </div>
+
+        <form class="p-2.5 sm:p-3 bg-white border-t border-slate-200 flex items-center gap-2" onsubmit="handleChatSubmit(event)">
+          <input class="flex-1 px-3.5 py-2.5 sm:py-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl text-xs sm:text-sm outline-none transition-all placeholder:text-slate-400 font-medium min-h-[48px]" id="chat-input-text" placeholder="Ketik pertanyaanmu di sini..." type="text" />
+          <button class="btn-pop min-h-[48px] px-4 bg-blue-600 hover:bg-blue-700 text-white font-fun font-bold text-xs sm:text-sm rounded-xl shadow-pop-blue flex items-center gap-1 shrink-0" type="submit">
+            <span>Kirim</span>
+            <span>🚀</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         7. SERTIFIKAT KELULUSAN DIGITAL (BLUR SEBELUM 5 LEVEL / 5 BINTANG)
+         ==================================================================== -->
+    <section class="scroll-mt-24 space-y-4" id="sertifikat">
+      <div class="text-center max-w-2xl mx-auto space-y-1.5 no-print px-2">
+        <span class="bg-amber-100 text-amber-900 font-bold text-xs uppercase tracking-widest px-3.5 py-1 rounded-full border border-amber-300">
+          Bukti Prestasi Hebat
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-fun">Sertifikat Junior Programmer</h2>
+        <p class="text-slate-600 text-xs sm:text-sm">
+          Tuliskan nama lengkapmu dan cetak sertifikat resmi digital ini sebagai tanda kelulusan petualangan kodingmu!
+        </p>
+      </div>
+
+      <!-- Kondisi Terkunci (< 5 Bintang) -->
+      <div class="max-w-xl mx-auto bg-amber-50 border-2 border-amber-200 rounded-3xl p-5 sm:p-6 text-center shadow-sm mb-6 no-print" id="cert-locked-card">
+        <div class="text-4xl mb-1 select-none">🔒</div>
+        <h3 class="text-lg sm:text-xl font-extrabold text-amber-900 font-fun">Sertifikat Kelulusan Masih Terkunci! 🔒</h3>
+        <span class="bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold inline-block my-2" id="cert-stars-badge">
+          Pencapaian: <span id="cert-stars-count">0</span>/5 Bintang Terkumpul
+        </span>
+        <p class="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+          Selesaikan 5 level permainan di Arena Koding atau jawab kuis logika untuk membuka sertifikat digital resmimu!
+        </p>
+        <div class="w-full max-w-xs sm:max-w-md mx-auto bg-amber-200/60 h-3 rounded-full mt-3 overflow-hidden border border-amber-300">
+          <div class="bg-amber-500 h-full rounded-full transition-all duration-500" id="cert-lock-progress-fill" style="width: 0%;"></div>
+        </div>
+        <a class="btn-pop bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-5 py-2.5 rounded-full shadow-pop-blue mt-4 inline-block text-xs sm:text-sm cursor-pointer" href="#arena">
+          Menuju Arena Koding 🎮
+        </a>
+      </div>
+
+      <!-- Kondisi Terbuka Form (>= 5 Bintang) -->
+      <div class="hidden max-w-3xl mx-auto bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 no-print flex flex-wrap items-center justify-between gap-3" id="cert-unlocked-form">
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
+          <label class="text-xs font-bold text-slate-600 whitespace-nowrap" for="student-name-input">Nama Siswa:</label>
+          <input class="flex-1 sm:w-64 h-11 px-3.5 rounded-xl border-2 border-slate-300 font-bold text-slate-800 focus:border-blue-500 outline-none transition-colors text-xs sm:text-sm" id="student-name-input" placeholder="Ketik nama lengkap..." type="text" value="Budi Pratama" />
+          <button class="btn-pop h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white font-fun font-bold text-xs sm:text-sm rounded-xl shadow-pop-blue flex items-center gap-1 shrink-0" onclick="updateCertificateName()">
+            <span>✏️</span>
+            <span>Perbarui</span>
+          </button>
+        </div>
+        <button class="btn-pop h-11 px-5 rounded-xl font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-pop-green flex items-center gap-1.5 text-xs sm:text-sm shrink-0" onclick="window.print()">
+          <span>🖨️</span>
+          <span>Cetak / PDF</span>
+        </button>
+      </div>
+
+      <!-- Kanvas Sertifikat Digital -->
+      <div class="w-full overflow-x-auto py-2">
+        <div class="max-w-4xl mx-auto min-w-[320px] sm:min-w-[620px] relative">
+          <!-- Overlay Terkunci -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none no-print" id="cert-locked-overlay">
+            <div class="rounded-3xl bg-slate-900/80 backdrop-blur-md text-white p-5 sm:p-7 text-center shadow-2xl max-w-xs sm:max-w-md mx-3 border border-white/20">
+              <div class="text-4xl text-amber-400 mb-2 select-none">🔒</div>
+              <h4 class="text-lg sm:text-xl font-extrabold font-fun text-white mb-1">Dokumen Resmi Terkunci</h4>
+              <p class="text-xs sm:text-sm text-slate-200">Kumpulkan 5 Bintang untuk Membuka Dokumen Resmi Ini</p>
+            </div>
+          </div>
+
+          <!-- Printable Area Sertifikat -->
+          <div class="filter blur-md pointer-events-none select-none opacity-40 transition-all duration-500 bg-gradient-to-b from-white to-amber-50/20 p-4 sm:p-8 rounded-3xl border-4 sm:border-8 border-blue-600 shadow-xl relative overflow-hidden" id="certificate-printable-area">
+            <div class="border-2 sm:border-4 border-dashed border-amber-400 p-4 sm:p-8 rounded-2xl bg-white relative space-y-4 sm:space-y-6 text-center">
+              <div class="absolute top-2 left-2 text-xl text-amber-400">⭐</div>
+              <div class="absolute top-2 right-2 text-xl text-amber-400">⭐</div>
+              <div class="absolute bottom-2 left-2 text-xl text-amber-400">⭐</div>
+              <div class="absolute bottom-2 right-2 text-xl text-amber-400">⭐</div>
+
+              <div class="flex flex-col items-center justify-center space-y-1">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md border-2 border-white">🤖</div>
+                <div class="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-blue-600">KodiKids Academy Indonesia</div>
+              </div>
+
+              <div class="space-y-1">
+                <h3 class="text-xl sm:text-3xl font-extrabold font-fun text-slate-900 uppercase tracking-tight">Sertifikat Penghargaan</h3>
+                <p class="text-[10px] sm:text-xs font-bold text-amber-700 tracking-widest uppercase">KodiKids Junior Programmer Award</p>
+              </div>
+
+              <div class="space-y-1.5 max-w-xl mx-auto">
+                <p class="text-xs text-slate-500 font-medium">Diberikan dengan penuh rasa bangga dan apresiasi tinggi kepada:</p>
+                <div class="py-1.5 border-b-2 border-slate-300">
+                  <span class="text-xl sm:text-3xl lg:text-4xl font-extrabold font-fun text-blue-600 tracking-wide" id="cert-display-name">Budi Pratama</span>
+                </div>
+                <p class="text-xs text-slate-600 font-medium pt-1 leading-relaxed">
+                  Atas keberhasilan menyelesaikan 5 tantangan logika algoritma dasar, menaklukkan labirin koding, dan menunjukkan semangat pantang menyerah sebagai programmer cilik masa depan!
+                </p>
+              </div>
+
+              <div class="pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                <div class="text-center sm:text-left space-y-0.5">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase">Tanggal Kelulusan:</p>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800" id="cert-issue-date">6 Oktober 2026</p>
+                  <p class="text-[10px] text-slate-400">Kode Sertifikat: KK-2026-SD01</p>
+                </div>
+                <div class="flex justify-center">
+                  <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 border-4 border-white shadow-lg flex flex-col items-center justify-center p-1 text-center">
+                    <span class="text-xl">🏆</span>
+                    <span class="text-[8px] font-extrabold uppercase text-amber-950 font-fun leading-tight mt-0.5">Resmi Lulus Terverifikasi</span>
+                  </div>
+                </div>
+                <div class="text-center sm:text-right space-y-0.5">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase">Instruktur & Maskot:</p>
+                  <div class="font-fun font-bold text-blue-600 text-sm sm:text-base italic">Kodi The Friendly Bot</div>
+                  <div class="w-24 h-0.5 bg-slate-300 ml-auto mr-auto sm:mr-0"></div>
+                  <p class="text-[10px] text-slate-500 font-semibold">KodiKids Education Lab</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       FOOTER
+       ==================================================================== -->
+  <footer class="mt-16 bg-white border-t border-slate-200 py-8 no-print">
+    <div class="w-full max-w-7xl mx-auto px-3 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg">🤖</div>
+        <div>
+          <span class="font-fun font-bold text-lg text-slate-900">KodiKids</span>
+          <p class="text-xs text-slate-500">Membina generasi pemikir logis dan kreatif sejak bangku sekolah dasar.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-500">
+        <a class="hover:text-blue-600" href="#beranda">Beranda</a>
+        <a class="hover:text-blue-600" href="#materi">Materi Cerita</a>
+        <a class="hover:text-blue-600" href="#arena">Arena Labirin</a>
+        <a class="hover:text-blue-600" href="#kuis">Kuis Logika</a>
+        <a class="hover:text-blue-600" href="#sertifikat">Sertifikat</a>
+      </div>
+      <div class="text-[11px] text-slate-400 font-medium">
+        © 2026 KodiKids. Dirancang dengan penuh cinta untuk anak-anak Indonesia.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ====================================================================
+       FLOATING ACTION BUTTON (SUARA MENGAMBANG) - fixed left-3 bottom-3 z-40
+       ==================================================================== -->
+  <button class="fixed left-3 bottom-3 z-40 w-12 h-12 rounded-full bg-white text-slate-700 border-2 border-slate-300 shadow-xl flex items-center justify-center hover:bg-sky-50 transition-all text-base no-print cursor-pointer" onclick="toggleSound()" title="Aktif/Nonaktifkan Efek Suara">
+    <span id="floating-audio-icon">🔊</span>
+  </button>
+
+  <!-- ====================================================================
+       POP-UP MODAL AUTENTIKASI LENGKAP
+       ==================================================================== -->
+  <div aria-labelledby="authModalTitle" aria-modal="true" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm no-print" id="auth-modal" role="dialog">
+    <div class="w-[94%] max-w-sm sm:max-w-md mx-auto p-5 sm:p-7 rounded-3xl bg-white shadow-2xl border-4 border-blue-100 relative animate-scale-up space-y-4">
+      <button class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold text-sm transition-colors" onclick="closeAuthModal()" title="Tutup">✕</button>
+      
+      <div class="flex items-center gap-3 pr-6">
+        <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-md shrink-0">🤖</div>
+        <div>
+          <h3 class="font-extrabold font-fun text-lg sm:text-xl text-slate-900" id="authModalTitle">Akun Belajar KodiKids</h3>
+          <p class="text-[11px] text-slate-500 font-medium">Simpan capaian bintang dan sertifikatmu</p>
+        </div>
+      </div>
+
+      <!-- Tab Switcher (Masuk & Daftar) -->
+      <div class="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+        <button class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white text-blue-600 shadow-sm" id="tab-btn-login" onclick="switchAuthTab('login')">Masuk</button>
+        <button class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900" id="tab-btn-register" onclick="switchAuthTab('register')">Daftar Akun</button>
+      </div>
+
+      <!-- Form Inputs -->
+      <form class="space-y-3" onsubmit="handleAuthSubmit(event)">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="auth-name-input">Nama Lengkap Siswa</label>
+          <input class="w-full h-11 px-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:border-blue-600 focus:bg-white outline-none transition-all" id="auth-name-input" placeholder="Contoh: Budi Pratama" required="" type="text" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="auth-class-input">Jenjang Kelas Sekolah</label>
+          <select class="w-full h-11 px-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:border-blue-600 focus:bg-white outline-none transition-all" id="auth-class-input">
+            <option value="SD Kelas 1-2">SD Kelas 1 atau 2 (Pemula Cilik)</option>
+            <option selected="" value="SD Kelas 3-4">SD Kelas 3 atau 4 (Junior)</option>
+            <option value="SD Kelas 5-6">SD Kelas 5 atau 6 (Mahir)</option>
+          </select>
+        </div>
+
+        <!-- Kata Sandi dengan Tombol Intip Mata -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="auth-pass-input">Kata Sandi / PIN</label>
+          <div class="relative flex items-center">
+            <input class="w-full h-11 pl-3.5 pr-10 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:border-blue-600 focus:bg-white outline-none transition-all font-mono" id="auth-pass-input" placeholder="Ketik kata sandi..." type="password" />
+            <button type="button" class="absolute right-2 text-base p-1 text-slate-400 hover:text-slate-700 transition-colors" onclick="togglePasswordVisibility('auth-pass-input', this)" title="Lihat kata sandi">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <!-- Ulangi Kata Sandi (Saat Tab Daftar) -->
+        <div id="auth-repeat-pass-group" class="hidden">
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="auth-repeat-pass-input">Ulangi Kata Sandi</label>
+          <div class="relative flex items-center">
+            <input class="w-full h-11 pl-3.5 pr-10 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:border-blue-600 focus:bg-white outline-none transition-all font-mono" id="auth-repeat-pass-input" placeholder="Ulangi kata sandi..." type="password" />
+            <button type="button" class="absolute right-2 text-base p-1 text-slate-400 hover:text-slate-700 transition-colors" onclick="togglePasswordVisibility('auth-repeat-pass-input', this)" title="Lihat kata sandi">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="btn-pop w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-fun font-bold text-sm rounded-xl shadow-pop-blue flex items-center justify-center gap-1.5" id="auth-submit-btn" type="submit">
+          <span>Masuk Sekarang</span><span>🚀</span>
+        </button>
+      </form>
+
+      <!-- Tombol Lanjut Sebagai Tamu -->
+      <div class="pt-1 border-t border-slate-100 space-y-2">
+        <button class="btn-pop w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1" onclick="continueAsGuest()">
+          <span>Tetap Lanjut Sebagai Tamu</span><span>👋</span>
+        </button>
+        <!-- Badge Keamanan -->
+        <div class="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-slate-400">
+          <span>🔒</span>
+          <span>100% Aman & Privasi Anak Indonesia Terjaga</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL SELEBRASI KEMENANGAN (POP-UP MODAL ARENA)
+       ==================================================================== -->
+  <div aria-labelledby="victoryTitle" aria-modal="true" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm no-print" id="victoryModal" role="dialog">
+    <div class="w-[94%] max-w-sm sm:max-w-md p-6 rounded-3xl text-center bg-white border-4 border-amber-300 relative animate-scale-up space-y-3 shadow-2xl">
+      <button class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold text-sm transition-colors" onclick="closeVictoryModal()" title="Tutup dialog">✕</button>
+      <div class="text-center pt-1">
+        <div class="text-4xl animate-bounce text-center mb-1 select-none">🏆</div>
+        <h3 class="font-extrabold font-fun text-xl sm:text-2xl text-slate-800" id="victoryTitle">Hore, Kamu Berhasil! 🎉</h3>
+        <p class="text-xs sm:text-sm text-slate-600 font-semibold mt-1" id="victorySubtitle">Kamu memecahkan tantangan dengan kode JavaScript asli:</p>
+      </div>
+
+      <!-- Kode JS Asli -->
+      <div class="bg-slate-900 text-slate-100 rounded-2xl p-3 my-2 font-mono text-xs border-2 border-slate-700 shadow-inner overflow-x-auto text-left leading-relaxed max-h-40">
+        <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800">
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+          </div>
+          <span class="text-[10px] font-bold text-slate-400">program_kodi.js</span>
+          <span class="text-[9px] text-blue-400 font-bold bg-slate-800 px-1.5 py-0.5 rounded">JS Asli</span>
+        </div>
+        <div class="space-y-1 font-mono text-[11px]" id="victoryCodeBlock"></div>
+      </div>
+
+      <div class="text-center">
+        <p class="text-xs sm:text-sm font-extrabold text-slate-700" id="victoryNextLevelPrompt">Apakah kamu siap lanjut ke Level berikutnya?</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-sm">🤖</div>
+          <div class="text-left">
+            <p class="text-xs font-bold text-slate-800">Kodi Bangga!</p>
+            <p class="text-[10px] text-emerald-600 font-extrabold">+1 Bintang ⭐</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button class="btn-pop flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl border border-slate-300 text-xs" onclick="closeVictoryModal()">Tutup</button>
+          <button class="btn-pop flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl shadow-pop-blue flex items-center justify-center gap-1 text-xs" id="btnNextLevelAction" onclick="proceedToNextLevel()">
+            <span id="btnNextLevelActionLabel">Lanjut Level 🚀</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       SCRIPTS MODULAR
+       ==================================================================== -->
+  <script src="js/sound.js"></script>
+  <script src="js/maze.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
