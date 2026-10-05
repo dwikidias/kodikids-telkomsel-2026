@@ -12,4 +12,4 @@ Karya untuk **M-ONE Telkomsel Coding Competition 2026** (Kategori Umum).
 - Sertifikat Kelulusan Digital (Terbuka setelah 5 level tuntas)
 
 ## 🌐 Live Website
-Dapat diakses langsung di: https://kodikids-telkomsel-2026.vercel.app
+Dapat diakses langsung di: [https://kodikids-telkomsel-2026.vercel.app](https://kodikids.vercel.app/)
