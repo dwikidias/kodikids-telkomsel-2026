@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
 
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 
-  // Kamus jawaban cadangan darurat (hanya aktif jika koneksi putus)
+  // Kamus jawaban cadangan cerdas (aktif jika semua model Google sibuk)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -70,43 +70,53 @@ Kunci Level:
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  // Menggunakan model resmi rekomendasi Google terbaru
-  const targetModel = 'gemini-3.8-flash';
+  // Kumpulan model alternatif jika terjadi 503 (High Demand)
+  const modelPool = [
+    'gemini-3.8-flash',
+    'gemini-3.8-flash-lite',
+    'gemini-3-flash'
+  ];
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
+  const payload = {
+    contents: [
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 300
-          }
-        })
+        role: 'user',
+        parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
       }
-    );
-
-    const data = await response.json();
-
-    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 300
     }
+  };
 
-    console.warn(`Respon model ${targetModel} tidak berhasil:`, data.error);
-    return res.status(200).json({ reply: getSmartFallback() });
-  } catch (err) {
-    console.error('Server error:', err);
-    return res.status(200).json({ reply: getSmartFallback() });
+  // Coba model secara berurutan
+  for (const model of modelPool) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+      }
+
+      console.warn(`Model ${model} mengembalikan status ${response.status}. Mencoba model alternatif...`);
+    } catch (e) {
+      console.warn(`Gagal memanggil model ${model}:`, e);
+    }
   }
+
+  // Jika semua model online sedang dalam antrean beban 503, gunakan fallback cerdas
+  return res.status(200).json({ reply: getSmartFallback() });
 };
