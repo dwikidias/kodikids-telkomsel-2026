@@ -1,6 +1,7 @@
 # Credentials and Local Configurations
 antigravity_config.json
 mcp_config.json
+.env*
 *.env
 *.env.*
 *.local.json

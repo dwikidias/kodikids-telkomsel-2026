@@ -42,7 +42,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || "AQ.Ab8RN6IH_GIgJoWHEY-fKLGRHW4pRJewuhd-eGFEGjF6_BKKbQ";
+    // Cukup baca dari process.env tanpa menuliskan teks kunci asli di sini
+    const apiKey = process.env.GEMINI_API_KEY;
     const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const systemInstructionText = "Kamu adalah Kodi, robot maskot ceria pemandu koding untuk anak Sekolah Dasar (SD usia 6-12 tahun) di platform KodiKids. Karaktermu: Sangat ramah, bersahabat, selalu menggunakan bahasa Indonesia yang sederhana dan ceria. Gunakan analogi benda nyata anak (seperti mainan balok lego, kue, menyikat gigi, bermain sepeda). Jawablah secara singkat dan padat (maksimal 2-3 kalimat per jawaban). Tambahkan emoji ceria seperti 🤖, ⭐, 🚀, 💡. Jangan gunakan istilah teknis rumit tanpa menjelaskan artinya secara jenaka.";

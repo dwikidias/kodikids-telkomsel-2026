@@ -186,12 +186,34 @@ const SoundEngine = {
 
   playVictoryFanfare() {
     this.playWin();
+  },
+
+  /**
+   * Suara saat pesan anak terkirim di chat
+   */
+  playChatSend() {
+    if (!this.soundEnabled) return;
+    this.playPop(520, 'sine', 0.07, 0.2);
+  },
+
+  /**
+   * Suara ceria ramah anak saat Kodi membalas chat
+   */
+  playChatReply() {
+    if (!this.soundEnabled) return;
+    this.playPop(587.33, 'triangle', 0.1, 0.22); // D5
+    setTimeout(() => {
+      this.playPop(880, 'sine', 0.16, 0.2); // A5
+    }, 90);
   }
 };
 
 // Aliaskan ke window untuk fleksibilitas kode
 window.SoundEngine = SoundEngine;
 window.AudioEngine = SoundEngine;
+window.soundFx = SoundEngine;
+window.playChatSend = () => SoundEngine.playChatSend();
+window.playChatReply = () => SoundEngine.playChatReply();
 window.toggleSound = () => SoundEngine.toggleSound();
 window.playStep = () => SoundEngine.playStep();
 window.playTurn = () => SoundEngine.playTurn();
