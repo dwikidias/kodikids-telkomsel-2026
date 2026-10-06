@@ -1,5 +1,4 @@
 module.exports = async function handler(req, res) {
-  // Hanya terima metode POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -11,48 +10,78 @@ module.exports = async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
 
-  // System Instruction dengan kepribadian Kodi dan panduan solusi Level 1 sampai 5
+  // Kamus jawaban cadangan darurat (hanya aktif jika internet putus)
+  const termAnswers = [
+    {
+      keywords: ['koding', 'coding', 'apa itu koding'],
+      reply: 'Koding itu seperti menulis surat resep ajaib untuk komputer! 📝 Kita memberi tahu komputer apa yang harus digambar dan dimainkan lewat perintah teratur! 🤖✨'
+    },
+    {
+      keywords: ['algoritma', 'apa itu algoritma'],
+      reply: 'Algoritma adalah langkah-langkah yang rapi dan urut dari awal sampai akhir, persis seperti resep membuat roti selai atau urutan menyikat gigi! 🥪🦷'
+    },
+    {
+      keywords: ['bug', 'kutu', 'apa itu bug'],
+      reply: 'Bug itu artinya kesalahan kecil dalam koding! Tugas kita memperbaikinya lewat proses seru bernama Debugging! 🐞🔍'
+    },
+    {
+      keywords: ['loop', 'perulangan', 'apa itu loop'],
+      reply: 'Loop itu seperti mengayuh sepeda berulang-ulang sampai tiba di tujuan tanpa perlu capek mengetik perintah berkali-kali! 🚲⭐'
+    }
+  ];
+
+  const levelAnswers = {
+    '1': 'Untuk Level 1: Susun balok: 1. Maju 1, 2. Maju 1, 3. Maju 1, lalu 4. Bintang! Semangat ya! 🤖⭐',
+    '2': 'Untuk Level 2: Susun balok: Maju 1 (3x), belok Kanan, lalu Maju 1 (3x) menuju bintang, dan akhiri dengan Bintang! 🚀',
+    '3': 'Untuk Level 3: Maju 1 (2x), belok Kanan, Maju 1 (2x), belok Kanan lagi, lalu Maju 1 ke bintang! ✨',
+    '4': 'Untuk Level 4: Ikuti rute tangga berbelok Kanan dan Kiri secara bergantian melewati rintangan batu! 💡',
+    '5': 'Untuk Level 5: Ikuti lorong spiral dari luar memutar ke arah tengah sampai tiba tepat di bintang emas! 🏆'
+  };
+
+  function getSmartFallback() {
+    const clean = message.toLowerCase().trim();
+    for (const item of termAnswers) {
+      if (item.keywords.some(k => clean.includes(k))) return item.reply;
+    }
+    const matchLevel = clean.match(/level\s*([1-5])/i);
+    if (matchLevel) return levelAnswers[matchLevel[1]];
+    if (clean.includes('selesai') || clean.includes('main') || clean.includes('bintang') || clean.includes('bantu')) {
+      const activeLvl = String(currentLevel || '1');
+      return levelAnswers[activeLvl] || levelAnswers['1'];
+    }
+    return 'Halo sahabat kecil! Kodi siap menemanimu belajar koding. Yuk tanyakan hal seru seputar koding! 🤖⭐';
+  }
+
+  // Jika kunci belum terpasang sama sekali
+  if (!apiKey) {
+    return res.status(200).json({ reply: getSmartFallback() });
+  }
+
   const systemInstruction = `
 Kamu adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karaktermu: Ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
-Pemain saat ini di: Level ${currentLevel || 1}.
-
-ATURAN BALOK KODING KODIKIDS:
-Hanya ada 4 balok: "Maju 1", "Kanan", "Kiri", dan "Bintang!".
-
-PANDUAN SOLUSI LEVEL:
-- Level 1: Maju 1, Maju 1, Maju 1, Bintang!
-- Level 2: Maju 1, Maju 1, Maju 1, Kanan, Maju 1, Maju 1, Maju 1, Bintang!
-- Level 3: Maju 1, Maju 1, Kanan, Maju 1, Maju 1, Kanan, Maju 1, Bintang!
-- Level 4: Maju 1, Kanan, Maju 1, Kiri, Maju 1, Maju 1, Kanan, Maju 1, Maju 1, Bintang!
-- Level 5: Maju 1 (5x), Kanan, Maju 1 (5x), Kanan, Maju 1 (4x), Kanan, Maju 1 (3x), Kanan, Maju 1 (2x), Kanan, Maju 1 (1x), Bintang!
-
-Jawablah singkat (2-3 kalimat), berikan nomor urut baloknya secara jelas, dan gunakan emoji seperti 🤖, ⭐, 🚀.
+Aturan: 
+1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak kecil.
+2. Jika ditanya cara menyelesaikan level (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", "Bintang!".
+Kunci Level:
+- Level 1: Maju 1 (3x), Bintang!
+- Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
+- Level 3: Maju 1 (2x), Kanan, Maju 1 (2x), Kanan, Maju 1, Bintang!
+- Level 4: Rute tangga selang-seling Kanan dan Kiri.
+- Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  // Fallback cadangan otomatis jika kunci belum valid atau kuota habis
-  const fallbackAnswers = {
-    '1': 'Untuk Level 1 gampang banget! Susun balok: 1. Maju 1, 2. Maju 1, 3. Maju 1, lalu 4. Bintang! Semangat ya! 🤖⭐',
-    '2': 'Untuk Level 2: Maju 1 tiga kali, belok Kanan, lalu Maju 1 tiga kali lagi menuju bintang! Jangan lupa balok Bintang! ya! 🚀',
-    '3': 'Untuk Level 3: Maju 1 dua kali, belok Kanan, Maju 1 dua kali, belok Kanan lagi, lalu Maju 1 ke bintang! ✨',
-    '4': 'Untuk Level 4 yang berliku: Ikuti rute tangga berbelok Kanan dan Kiri secara bergantian sampai tiba di bintang! 💡',
-    '5': 'Level 5 Labirin Juara: Ikuti lorong spiral dari pinggir luar memutar ke tengah sampai robot tiba tepat di bintang emas! 🏆'
-  };
-
-  // Jika kunci API belum terpasang atau formatnya salah
-  if (!apiKey || !apiKey.startsWith('AIzaSy')) {
-    const levelKey = String(currentLevel || '1');
-    const defaultReply = fallbackAnswers[levelKey] ||
-      'Halo sahabat kecil! Kodi siap membantumu menaklukkan tantangan koding hari ini! 🤖⭐';
-    return res.status(200).json({ reply: defaultReply });
-  }
-
   try {
+    // Panggil Gemini API dengan otentikasi ganda (header x-goog-api-key dan query parameter)
+    const encodedKey = encodeURIComponent(apiKey.trim());
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodedKey}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim()
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -62,7 +91,7 @@ Jawablah singkat (2-3 kalimat), berikan nomor urut baloknya secara jelas, dan gu
           ],
           generationConfig: {
             temperature: 0.4,
-            maxOutputTokens: 350
+            maxOutputTokens: 300
           }
         })
       }
@@ -71,21 +100,14 @@ Jawablah singkat (2-3 kalimat), berikan nomor urut baloknya secara jelas, dan gu
     const data = await response.json();
 
     if (!response.ok) {
-      console.warn('Google API mengembalikan status error:', data.error);
-      const levelKey = String(currentLevel || '1');
-      return res.status(200).json({
-        reply: fallbackAnswers[levelKey] || 'Kodi siap membantumu! Yuk susun balok kodingmu dan raih bintang emas! 🤖⭐'
-      });
+      console.warn('Google API return status:', response.status, data.error);
+      return res.status(200).json({ reply: getSmartFallback() });
     }
 
-    const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      'Wah pertanyaan menarik! Yuk coba susun balok kodingmu sekarang! 🤖';
-
+    const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || getSmartFallback();
     return res.status(200).json({ reply: aiReply });
   } catch (err) {
-    console.error('Server fetch error:', err);
-    return res.status(200).json({
-      reply: 'Kodi sedang memeriksa peta arena! Coba tanyakan lagi ya sahabat kecil! 🤖💡'
-    });
+    console.error('Fetch server error:', err);
+    return res.status(200).json({ reply: getSmartFallback() });
   }
 };
