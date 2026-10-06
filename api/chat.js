@@ -1,3 +1,6 @@
+// Variabel memori untuk menyimpan nama model yang sukses
+let cachedWorkingModel = null;
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -10,15 +13,15 @@ module.exports = async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
 
-  // Kamus jawaban cadangan darurat (hanya aktif jika internet putus)
+  // Kamus jawaban cadangan darurat
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
-      reply: 'Koding itu seperti menulis surat resep ajaib untuk komputer! 📝 Kita memberi tahu komputer apa yang harus digambar dan dimainkan lewat perintah teratur! 🤖✨'
+      reply: 'Koding itu seperti menulis resep ajaib untuk komputer! 📝 Kita memberi tahu komputer apa yang harus digambar dan dimainkan lewat perintah teratur! 🤖✨'
     },
     {
       keywords: ['algoritma', 'apa itu algoritma'],
-      reply: 'Algoritma adalah langkah-langkah yang rapi dan urut dari awal sampai akhir, persis seperti resep membuat roti selai atau urutan menyikat gigi! 🥪🦷'
+      reply: 'Algoritma adalah langkah-langkah yang rapi dan urut dari awal sampai akhir, persis seperti resep membuat roti selai cokelat! 🥪🦷'
     },
     {
       keywords: ['bug', 'kutu', 'apa itu bug'],
@@ -52,7 +55,6 @@ module.exports = async function handler(req, res) {
     return 'Halo sahabat kecil! Kodi siap menemanimu belajar koding. Yuk tanyakan hal seru seputar koding! 🤖⭐';
   }
 
-  // Jika kunci belum terpasang sama sekali
   if (!apiKey) {
     return res.status(200).json({ reply: getSmartFallback() });
   }
@@ -60,9 +62,9 @@ module.exports = async function handler(req, res) {
   const systemInstruction = `
 Kamu adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karaktermu: Ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
-Aturan: 
-1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak kecil.
-2. Jika ditanya cara menyelesaikan level (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", "Bintang!".
+Aturan:
+1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak.
+2. Jika ditanya cara menyelesaikan level permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", "Bintang!".
 Kunci Level:
 - Level 1: Maju 1 (3x), Bintang!
 - Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
@@ -71,43 +73,60 @@ Kunci Level:
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  try {
-    // Panggil Gemini API dengan otentikasi ganda (header x-goog-api-key dan query parameter)
-    const encodedKey = encodeURIComponent(apiKey.trim());
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodedKey}`,
+  // Daftar nama model yang dicoba secara otomatis
+  const candidateModels = cachedWorkingModel
+    ? [cachedWorkingModel]
+    : [
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-flash-001',
+      'gemini-pro'
+    ];
+
+  const payload = {
+    contents: [
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey.trim()
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 300
-          }
-        })
+        role: 'user',
+        parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
       }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.warn('Google API return status:', response.status, data.error);
-      return res.status(200).json({ reply: getSmartFallback() });
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 300
     }
+  };
 
-    const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || getSmartFallback();
-    return res.status(200).json({ reply: aiReply });
-  } catch (err) {
-    console.error('Fetch server error:', err);
-    return res.status(200).json({ reply: getSmartFallback() });
+  const cleanKey = apiKey.trim();
+
+  // Loop otomatis mencari model yang aktif
+  for (const modelName of candidateModels) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': cleanKey
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        cachedWorkingModel = modelName; // Kunci model yang berhasil
+        return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+      }
+
+      console.warn(`Model ${modelName} gagal (${response.status}), mencoba model berikutnya...`);
+    } catch (err) {
+      console.warn(`Koneksi ke model ${modelName} gagal:`, err);
+    }
   }
+
+  // Jika seluruh model online gagal, kembalikan respon ramah anak
+  return res.status(200).json({ reply: getSmartFallback() });
 };
