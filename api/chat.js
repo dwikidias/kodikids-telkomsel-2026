@@ -1,4 +1,3 @@
-// Variabel memori untuk menyimpan nama model yang sukses
 let cachedWorkingModel = null;
 
 module.exports = async function handler(req, res) {
@@ -11,9 +10,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 
-  // Kamus jawaban cadangan darurat
+  // Kamus jawaban cadangan darurat jika koneksi internet terputus
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -73,60 +72,77 @@ Kunci Level:
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  // Daftar nama model yang dicoba secara otomatis
-  const candidateModels = cachedWorkingModel
-    ? [cachedWorkingModel]
-    : [
-      'gemini-1.5-flash-latest',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash-002',
-      'gemini-1.5-flash-001',
-      'gemini-pro'
-    ];
+  // 1. Fungsi Deteksi Model Aktif secara Dinamis via ListModels Google
+  async function resolveActiveModel() {
+    if (cachedWorkingModel) return cachedWorkingModel;
 
-  const payload = {
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 300
-    }
-  };
-
-  const cleanKey = apiKey.trim();
-
-  // Loop otomatis mencari model yang aktif
-  for (const modelName of candidateModels) {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': cleanKey
-          },
-          body: JSON.stringify(payload)
-        }
+      const listRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+        { headers: { 'x-goog-api-key': apiKey } }
       );
 
-      const data = await response.json();
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const available = listData.models || [];
 
-      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        cachedWorkingModel = modelName; // Kunci model yang berhasil
-        return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+        // Cari model yang mendukung generateContent dengan prioritas flash/pro terbaru
+        const found = available.find(m =>
+          m.supportedGenerationMethods &&
+          m.supportedGenerationMethods.includes('generateContent') &&
+          (m.name.includes('flash') || m.name.includes('gemini'))
+        );
+
+        if (found) {
+          cachedWorkingModel = found.name.replace('models/', '');
+          console.log('Model Gemini aktif terdeteksi:', cachedWorkingModel);
+          return cachedWorkingModel;
+        }
       }
-
-      console.warn(`Model ${modelName} gagal (${response.status}), mencoba model berikutnya...`);
-    } catch (err) {
-      console.warn(`Koneksi ke model ${modelName} gagal:`, err);
+    } catch (e) {
+      console.warn('Gagal memanggil ListModels:', e);
     }
+
+    // Default fallback model generasi baru
+    return 'gemini-2.5-flash';
   }
 
-  // Jika seluruh model online gagal, kembalikan respon ramah anak
-  return res.status(200).json({ reply: getSmartFallback() });
+  try {
+    const targetModel = await resolveActiveModel();
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 300
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+    }
+
+    console.warn(`Respon model ${targetModel} tidak berhasil:`, data.error);
+    return res.status(200).json({ reply: getSmartFallback() });
+  } catch (err) {
+    console.error('Server error:', err);
+    return res.status(200).json({ reply: getSmartFallback() });
+  }
 };
