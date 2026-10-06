@@ -1,5 +1,3 @@
-let cachedWorkingModel = null;
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -12,7 +10,7 @@ module.exports = async function handler(req, res) {
 
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 
-  // Kamus jawaban cadangan darurat jika koneksi internet terputus
+  // Kamus jawaban cadangan darurat (hanya aktif jika koneksi putus)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -72,44 +70,10 @@ Kunci Level:
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  // 1. Fungsi Deteksi Model Aktif secara Dinamis via ListModels Google
-  async function resolveActiveModel() {
-    if (cachedWorkingModel) return cachedWorkingModel;
-
-    try {
-      const listRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-        { headers: { 'x-goog-api-key': apiKey } }
-      );
-
-      if (listRes.ok) {
-        const listData = await listRes.json();
-        const available = listData.models || [];
-
-        // Cari model yang mendukung generateContent dengan prioritas flash/pro terbaru
-        const found = available.find(m =>
-          m.supportedGenerationMethods &&
-          m.supportedGenerationMethods.includes('generateContent') &&
-          (m.name.includes('flash') || m.name.includes('gemini'))
-        );
-
-        if (found) {
-          cachedWorkingModel = found.name.replace('models/', '');
-          console.log('Model Gemini aktif terdeteksi:', cachedWorkingModel);
-          return cachedWorkingModel;
-        }
-      }
-    } catch (e) {
-      console.warn('Gagal memanggil ListModels:', e);
-    }
-
-    // Default fallback model generasi baru
-    return 'gemini-2.5-flash';
-  }
+  // Menggunakan model resmi rekomendasi Google terbaru
+  const targetModel = 'gemini-3.8-flash';
 
   try {
-    const targetModel = await resolveActiveModel();
-
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
