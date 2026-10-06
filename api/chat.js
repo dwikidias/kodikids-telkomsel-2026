@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
 
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 
-  // Kamus jawaban cadangan cerdas (aktif jika semua model Google sibuk)
+  // Kamus jawaban cadangan cerdas Kodi
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -70,53 +70,41 @@ Kunci Level:
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 `;
 
-  // Kumpulan model alternatif jika terjadi 503 (High Demand)
-  const modelPool = [
-    'gemini-3.8-flash',
-    'gemini-3.8-flash-lite',
-    'gemini-3-flash'
-  ];
-
-  const payload = {
-    contents: [
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
-        role: 'user',
-        parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemInstruction}\n\nPertanyaan anak: "${message}"` }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 300
+          }
+        })
       }
-    ],
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 300
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
     }
-  };
 
-  // Coba model secara berurutan
-  for (const model of modelPool) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          body: JSON.stringify(payload)
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
-      }
-
-      console.warn(`Model ${model} mengembalikan status ${response.status}. Mencoba model alternatif...`);
-    } catch (e) {
-      console.warn(`Gagal memanggil model ${model}:`, e);
-    }
+    // Jika terjadi 429 (rate limit sesaat), gunakan fallback cerdas tanpa membuat web macet
+    console.warn('Google API status:', response.status, data.error?.message || '');
+    return res.status(200).json({ reply: getSmartFallback() });
+  } catch (err) {
+    console.error('Fetch error:', err);
+    return res.status(200).json({ reply: getSmartFallback() });
   }
-
-  // Jika semua model online sedang dalam antrean beban 503, gunakan fallback cerdas
-  return res.status(200).json({ reply: getSmartFallback() });
 };
