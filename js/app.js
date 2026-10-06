@@ -307,97 +307,267 @@ function nextQuizQuestion() {
 }
 
 // ====================================================================
-// 4. TANYA KODI (AI LOGIC ASSISTANT)
+// 4. TANYA KODI (AI LOGIC ASSISTANT - GEMINI INTEGRATION)
 // ====================================================================
 
-const KODI_KB = {
-  koding: "Koding adalah cara kita memberi tahu komputer apa yang harus dilakukan menggunakan bahasa instruksi khusus yang dimengerti komputer!",
-  algoritma: "Algoritma adalah resep atau urutan langkah demi langkah yang rapi untuk menyelesaikan suatu masalah, seperti resep memasak!",
-  bug: "Bug adalah kesalahan dalam kode komputer yang membuat program bertingkah aneh. Memperbaiki bug disebut Debugging!",
-  loop: "Loop (Perulangan) menyuruh komputer mengulang aksi berkali-kali tanpa capek!",
-  perulangan: "Loop (Perulangan) menyuruh komputer mengulang aksi berkali-kali tanpa capek!",
-  sekuens: "Sekuens adalah mengerjakan instruksi secara urut dari baris pertama sampai terakhir tanpa lompat-lompat.",
-  variabel: "Variabel seperti kotak mainan berpita nama, tempat menyimpan data seperti skor bintang atau nama pemain!"
-};
+// Polyfill selector :has-text() agar kompatibel dengan DOM standar peramban
+(function polyfillHasText() {
+  if (typeof Document === 'undefined') return;
+  const originalQuerySelector = Document.prototype.querySelector;
+  const originalQuerySelectorAll = Document.prototype.querySelectorAll;
 
+  function findByText(tag, text, parent = document) {
+    const elements = parent.getElementsByTagName(tag || '*');
+    for (const el of elements) {
+      if (el.textContent && el.textContent.includes(text)) return el;
+    }
+    return null;
+  }
+
+  function findAllByText(selectorGroup, parent = document) {
+    const results = new Set();
+    const parts = selectorGroup.split(',').map(s => s.trim());
+    for (const part of parts) {
+      const match = part.match(/^([a-zA-Z0-9_\-\.\*]*):has-text\((["']?)(.*?)\2\)$/);
+      if (match) {
+        const tag = match[1] || '*';
+        const text = match[3];
+        const elements = parent.querySelectorAll(tag || '*');
+        elements.forEach(el => {
+          if (el.textContent && el.textContent.includes(text)) results.add(el);
+        });
+      } else {
+        try {
+          const els = parent.querySelectorAll(part);
+          els.forEach(el => results.add(el));
+        } catch (_) {}
+      }
+    }
+    return Array.from(results);
+  }
+
+  Document.prototype.querySelector = function(selector) {
+    try {
+      return originalQuerySelector.call(this, selector);
+    } catch (e) {
+      const match = typeof selector === 'string' && selector.match(/^([a-zA-Z0-9_\-\.\*]*):has-text\((["']?)(.*?)\2\)$/);
+      if (match) {
+        return findByText(match[1], match[3], this);
+      }
+      return null;
+    }
+  };
+
+  Document.prototype.querySelectorAll = function(selector) {
+    try {
+      return originalQuerySelectorAll.call(this, selector);
+    } catch (e) {
+      if (typeof selector === 'string' && selector.includes(':has-text')) {
+        return findAllByText(selector, this);
+      }
+      return [];
+    }
+  };
+})();
+
+// ============================================================
+// LOGIKA CHAT TANYA KODI AI BUDDY (GEMINI INTEGRATION)
+// ============================================================
+
+function initKodiChat() {
+  const chatBody = document.getElementById('ai-chat-body') || document.querySelector('.ai-chat-body');
+  const chatInput = document.getElementById('ai-chat-input') || document.querySelector('input[placeholder*="Ketik pertanyaanmu"]');
+  const sendBtn = document.getElementById('ai-btn-send') || document.querySelector('button:has-text("Kirim")') || document.querySelector('.btn-send-chat');
+  const clearBtn = document.querySelector('button:has-text("Bersihkan")') || document.querySelector('.btn-clear-chat');
+  const suggestionButtons = document.querySelectorAll('.prompt-suggestion-chip, button[class*="tanya-cepat"], button:has-text("Apa itu"), button:has-text("Algoritma"), button:has-text("Bug"), button:has-text("Loop")');
+
+  if (!chatBody || !chatInput) {
+    console.warn('Elemen chat Tanya Kodi tidak ditemukan pada DOM');
+    return;
+  }
+
+  // 1. Fungsi Tambah Bubble Pesan ke Layar
+  function appendBubble(sender, text) {
+    const bubble = document.createElement('div');
+    const isKodi = sender === 'kodi';
+    bubble.className = `flex gap-3 mb-4 items-start ${isKodi ? 'justify-start' : 'justify-end'}`;
+
+    if (isKodi) {
+      bubble.innerHTML = `
+        <div class="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center text-xl shrink-0">🤖</div>
+        <div class="bg-white border-2 border-slate-200 rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-sm text-slate-800 text-sm leading-relaxed">
+          <div class="font-extrabold text-blue-600 text-xs mb-1">Kodi</div>
+          <p>${text}</p>
+        </div>
+      `;
+    } else {
+      bubble.innerHTML = `
+        <div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-4 max-w-[85%] shadow-sm text-sm leading-relaxed">
+          <div class="font-extrabold text-blue-200 text-xs mb-1 text-right">Kamu</div>
+          <p>${text}</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-xl shrink-0">⭐</div>
+      `;
+    }
+
+    chatBody.appendChild(bubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  // 2. Fungsi Indikator Kodi Sedang Berpikir
+  function showTypingIndicator() {
+    const indicator = document.createElement('div');
+    indicator.id = 'kodi-typing-indicator';
+    indicator.className = 'flex gap-3 mb-4 items-start justify-start';
+    indicator.innerHTML = `
+      <div class="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center text-xl shrink-0">🤖</div>
+      <div class="bg-white border-2 border-slate-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm text-xs font-bold text-blue-600 flex items-center gap-1.5">
+        <span>Kodi sedang berpikir</span>
+        <span class="animate-bounce">.</span>
+        <span class="animate-bounce [animation-delay:0.2s]">.</span>
+        <span class="animate-bounce [animation-delay:0.4s]">.</span>
+      </div>
+    `;
+    chatBody.appendChild(indicator);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function removeTypingIndicator() {
+    const el = document.getElementById('kodi-typing-indicator');
+    if (el) el.remove();
+  }
+
+  // 3. Fungsi Utama Kirim Pesan ke Gemini (/api/chat)
+  async function handleSend(text) {
+    const query = text || chatInput.value.trim();
+    if (!query) return;
+
+    // Tampilkan pesan anak dan kosongkan input
+    appendBubble('user', query);
+    chatInput.value = '';
+    showTypingIndicator();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query })
+      });
+
+      const data = await res.json();
+      removeTypingIndicator();
+
+      if (res.ok && data.reply) {
+        appendBubble('kodi', data.reply);
+        if (window.soundFx) window.soundFx.playStep();
+      } else {
+        throw new Error(data.error || 'Gagal memuat respon');
+      }
+    } catch (err) {
+      console.warn('Gagal memanggil API Gemini, beralih ke jawaban lokal:', err);
+      removeTypingIndicator();
+
+      // Jawaban ceria cadangan (fallback) agar chat tidak pernah macet
+      const fallbacks = [
+        { key: 'koding', reply: 'Koding itu seperti menulis surat resep ajaib untuk robot atau komputer agar mereka tahu apa yang harus digambar dan dimainkan! 📝🤖' },
+        { key: 'algoritma', reply: 'Algoritma adalah urutan langkah rapi seperti resep membuat roti atau menyikat gigi! Kalau urutannya terbalik, rotinya bisa berantakan! 🥪✨' },
+        { key: 'bug', reply: 'Bug itu artinya kesalahan kecil dalam koding, seperti kaus kaki yang tertukar kiri dan kanan! Tugas kita memperbaikinya lewat Debugging! 🐞🔍' },
+        { key: 'loop', reply: 'Loop itu seperti mengayuh sepeda berulang-ulang sampai tiba di taman bermain tanpa perlu capek mengetik perintah berkali-kali! 🚲⭐' }
+      ];
+
+      const cleanQuery = query.toLowerCase();
+      let fallbackText = 'Pertanyaan yang keren! Teruslah penasaran dan suka bertanya ya, programmer cilik hebat! 🌟🤖';
+      for (const item of fallbacks) {
+        if (cleanQuery.includes(item.key)) {
+          fallbackText = item.reply;
+          break;
+        }
+      }
+      appendBubble('kodi', fallbackText);
+    }
+  }
+
+  // 4. Pasang Event Listeners
+  if (sendBtn) {
+    sendBtn.onclick = (e) => {
+      e.preventDefault();
+      handleSend();
+    };
+  }
+
+  chatInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Tombol Tanya Cepat
+  suggestionButtons.forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const questionText = btn.textContent.replace(/^[^\w\s]+/, '').trim();
+      handleSend(questionText);
+    };
+  });
+
+  // Tombol Bersihkan Chat
+  if (clearBtn) {
+    clearBtn.onclick = (e) => {
+      e.preventDefault();
+      chatBody.innerHTML = `
+        <div class="flex gap-3 mb-4 items-start justify-start">
+          <div class="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center text-xl shrink-0">🤖</div>
+          <div class="bg-white border-2 border-slate-200 rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-sm text-slate-800 text-sm leading-relaxed">
+            <div class="font-extrabold text-blue-600 text-xs mb-1">Kodi</div>
+            <p>Halo sahabat kecil! Aku Kodi, robot pemandu kodingmu. Ada kata atau logika koding yang ingin kamu tanyakan hari ini? Klik tombol pertanyaan cepat di atas atau ketik langsung di bawah ya!</p>
+          </div>
+        </div>
+      `;
+    };
+  }
+
+  // Hubungkan ke window untuk interop onclick inline
+  window.handleSendChat = handleSend;
+  window.clearChatBody = () => { if (clearBtn) clearBtn.click(); };
+}
+
+// Inisialisasi saat dokumen selesai dimuat
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initKodiChat);
+  } else {
+    initKodiChat();
+  }
+}
+
+// Fungsi pembantu kompatibilitas inline onclick
 function askPreset(question) {
-  const input = document.getElementById('chat-input-text');
-  if (input) {
-    input.value = question;
-    handleChatSubmit(new Event('submit'));
+  if (typeof window.handleSendChat === 'function') {
+    window.handleSendChat(question);
+  } else {
+    const input = document.getElementById('ai-chat-input') || document.getElementById('chat-input-text');
+    if (input) {
+      input.value = question;
+      if (typeof window.handleChatSubmit === 'function') window.handleChatSubmit();
+    }
   }
 }
 
 function resetChat() {
-  const messagesContainer = document.getElementById('chat-messages');
-  if (!messagesContainer) return;
-  messagesContainer.innerHTML = `
-    <div class="flex items-start gap-2.5">
-      <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-sm">🤖</div>
-      <div class="max-w-[85%] bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-xs sm:text-sm text-slate-800 space-y-0.5">
-        <p class="font-bold text-blue-600 text-[11px]">Kodi</p>
-        <p>Chat telah dibersihkan! Mau tanya apa lagi seputar koding anak pintar?</p>
-      </div>
-    </div>
-  `;
-  if (window.SoundEngine) window.SoundEngine.playPop(300, 'sine', 0.08);
+  const clearBtn = document.getElementById('ai-btn-clear') || document.querySelector('.btn-clear-chat');
+  if (clearBtn) {
+    clearBtn.click();
+  } else if (typeof window.clearChatBody === 'function') {
+    window.clearChatBody();
+  }
 }
 
 function handleChatSubmit(e) {
-  if (e) e.preventDefault();
-  const input = document.getElementById('chat-input-text');
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-
-  appendChatMessage(text, 'user');
-  input.value = '';
-  if (window.SoundEngine) window.SoundEngine.playPop(500, 'sine', 0.05);
-
-  setTimeout(() => {
-    let reply = "Pertanyaan hebat! Komputer bekerja dengan menyusun instruksi logika kecil yang teratur. Kamu bisa mencobanya langsung di Arena Koding!";
-    const lower = text.toLowerCase();
-
-    if (lower.includes('koding')) reply = KODI_KB.koding;
-    else if (lower.includes('algoritma')) reply = KODI_KB.algoritma;
-    else if (lower.includes('bug')) reply = KODI_KB.bug;
-    else if (lower.includes('loop') || lower.includes('perulangan')) reply = KODI_KB.loop;
-    else if (lower.includes('sekuens') || lower.includes('urutan')) reply = KODI_KB.sekuens;
-    else if (lower.includes('variabel')) reply = KODI_KB.variabel;
-    else if (lower.includes('halo') || lower.includes('hai')) reply = "Halo sahabat kecil! Siap memecahkan teka-teki logika bersama Kodi hari ini?";
-    else if (lower.includes('bintang')) reply = "Kumpulkan bintang dengan menyelesaikan level labirin dan menjawab 5 soal kuis logika ya!";
-
-    appendChatMessage(reply, 'kodi');
-    if (window.SoundEngine) window.SoundEngine.playPop(620, 'triangle', 0.1);
-  }, 400);
-}
-
-function appendChatMessage(msg, sender) {
-  const container = document.getElementById('chat-messages');
-  if (!container) return;
-  const row = document.createElement('div');
-
-  if (sender === 'user') {
-    row.className = "flex items-start justify-end gap-2.5";
-    row.innerHTML = `
-      <div class="max-w-[85%] bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-xs sm:text-sm space-y-0.5">
-        <p class="font-bold text-blue-100 text-[10px] text-right">Kamu</p>
-        <p>${msg}</p>
-      </div>
-      <div class="w-8 h-8 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-sm">👦</div>
-    `;
-  } else {
-    row.className = "flex items-start gap-2.5";
-    row.innerHTML = `
-      <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-sm">🤖</div>
-      <div class="max-w-[85%] bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-xs sm:text-sm text-slate-800 space-y-0.5">
-        <p class="font-bold text-blue-600 text-[11px]">Kodi</p>
-        <p>${msg}</p>
-      </div>
-    `;
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  if (typeof window.handleSendChat === 'function') {
+    window.handleSendChat();
   }
-  container.appendChild(row);
-  container.scrollTop = container.scrollHeight;
 }
 
 // ====================================================================
@@ -426,3 +596,4 @@ window.nextQuizQuestion = nextQuizQuestion;
 window.askPreset = askPreset;
 window.resetChat = resetChat;
 window.handleChatSubmit = handleChatSubmit;
+window.initKodiChat = initKodiChat;
