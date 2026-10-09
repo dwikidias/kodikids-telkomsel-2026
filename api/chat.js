@@ -8,18 +8,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
   }
 
-  // Base URL resmi Google Gemini OpenAI endpoint
-  const rawBaseURL = (process.env.AI_GATEWAY_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai').trim();
-  const baseURL = rawBaseURL.replace(/\/+$/, '');
   const apiKey = (process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY || '').trim();
 
-  // Pastikan model mengarah ke model resmi gemini-3.8-flash
-  let modelName = (process.env.AI_MODEL_NAME || 'gemini-3.8-flash').trim();
-  if (modelName === 'gemini-3.7-flash' || modelName === 'gemini-1.5-flash') {
-    modelName = 'gemini-3.8-flash';
-  }
-
-  // Kamus jawaban cadangan cerdas (jika koneksi offline)
+  // Kamus jawaban cadangan cerdas Kodi
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -68,8 +59,8 @@ module.exports = async function handler(req, res) {
   const systemPrompt = `Anda adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karakter: Sangat ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
 Aturan:
-1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak (mainan lego, resep kue, sikat gigi, sepeda).
-2. Jika ditanya cara menyelesaikan permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", dan "Bintang!".
+1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak.
+2. Jika ditanya cara menyelesaikan level permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", "Bintang!".
 Kunci Level:
 - Level 1: Maju 1 (3x), Bintang!
 - Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
@@ -80,37 +71,52 @@ Kunci Level:
 
   const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
 
+  // Pasang batas waktu (Timeout) maksimal 8 detik
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   try {
-    const endpoint = `${baseURL}/chat/completions`;
+    // Gunakan rute native Gemini resmi yang terbukti stabil untuk kunci AQ.
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
         'x-goog-api-key': apiKey
       },
       body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\n${userMessage}` }]
+          }
         ],
-        temperature: 0.3,
-        max_tokens: 300
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 300
+        }
       })
     });
 
+    clearTimeout(timeoutId);
     const data = await response.json();
 
-    if (response.ok && data.choices?.[0]?.message?.content) {
-      return res.status(200).json({ reply: data.choices[0].message.content });
+    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
     }
 
-    console.warn('OpenAI Compatibility endpoint response:', response.status, JSON.stringify(data));
+    console.warn('API mengembalikan respon tidak lengkap, gunakan fallback:', data);
     return res.status(200).json({ reply: getSmartFallback() });
   } catch (err) {
-    console.error('Fetch error ke gateway:', err);
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      console.warn('Koneksi Google API melebihi 8 detik (Timeout dibatalkan).');
+    } else {
+      console.error('Fetch error:', err);
+    }
+    // Langsung berikan jawaban ramah anak seketika tanpa membebani Vercel
     return res.status(200).json({ reply: getSmartFallback() });
   }
 };
