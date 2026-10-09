@@ -9,14 +9,9 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
+  const modelName = (process.env.AI_MODEL_NAME || 'openai/gpt-oss-20b').trim();
 
-  // Gunakan model aktif resmi Groq terbaru
-  let modelName = (process.env.AI_MODEL_NAME || 'openai/gpt-oss-20b').trim();
-  if (modelName.includes('llama-3.3') || modelName.includes('llama-3.1')) {
-    modelName = 'openai/gpt-oss-20b';
-  }
-
-  // Kamus jawaban cadangan cerdas Kodi (jika kuota offline)
+  // 1. Kamus Jawaban Cadangan untuk Istilah Koding
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -36,12 +31,17 @@ module.exports = async function handler(req, res) {
     }
   ];
 
+  // 2. Kunci Jawaban Resmi Level 1 sampai 5 (Sesuai Denah Arena Terbaru)
   const levelAnswers = {
-    '1': 'Untuk Level 1: Susun balok: 1. Maju 1, 2. Maju 1, 3. Maju 1, lalu 4. Bintang! Semangat ya! 🤖⭐',
-    '2': 'Untuk Level 2: Susun balok: Maju 1 (3x), belok Kanan, lalu Maju 1 (3x) menuju bintang, dan akhiri dengan Bintang! 🚀',
-    '3': 'Untuk Level 3: Maju 1 (2x), belok Kanan, Maju 1 (2x), belok Kanan lagi, lalu Maju 1 ke bintang! ✨',
-    '4': 'Untuk Level 4: Ikuti rute tangga berbelok Kanan dan Kiri secara bergantian melewati rintangan batu! 💡',
-    '5': 'Untuk Level 5: Ikuti lorong spiral dari luar memutar ke arah tengah sampai tiba tepat di bintang emas! 🏆'
+    '1': 'Kunci Jawaban Level 1 (Garis Lurus):\n1. Maju 1\n2. Maju 1\n3. Maju 1\n4. Bintang!\nSemangat mencoba ya! 🤖⭐',
+
+    '2': 'Kunci Jawaban Level 2 (Belok Santai):\n1. Maju 1\n2. Maju 1\n3. Kanan\n4. Maju 1\n5. Maju 1\n6. Maju 1\n7. Bintang!\nSusun baloknya dan raih bintangmu! 🚀',
+
+    '3': 'Kunci Jawaban Level 3 (Labirin Emas):\n1. Kanan\n2. Maju 1\n3. Maju 1\n4. Kanan\n5. Maju 1\n6. Kiri\n7. Maju 1\n8. Maju 1\n9. Kiri\n10. Maju 1\n11. Maju 1\n12. Maju 1\n13. Maju 1\n14. Bintang!\nKeren sekali jika kamu berhasil menyusunnya! ✨',
+
+    '4': 'Kunci Jawaban Level 4 (Tikungan Ganda):\n1. Kanan\n2. Maju 1\n3. Maju 1\n4. Kiri\n5. Maju 1\n6. Maju 1\n7. Maju 1\n8. Kanan\n9. Maju 1\n10. Maju 1\n11. Maju 1\n12. Kiri\n13. Maju 1\n14. Bintang!\nIkuti rute tangga berbelok ini ya! 💡',
+
+    '5': 'Kunci Jawaban Level 5 (Labirin Juara):\n1. Maju 1 (5 kali)\n2. Kanan\n3. Maju 1 (5 kali)\n4. Kanan\n5. Maju 1 (4 kali)\n6. Kanan\n7. Maju 1 (3 kali)\n8. Kanan\n9. Maju 1 (1 kali)\n10. Bintang!\nLuar biasa! Lorong spiral ini akan membawamu ke bintang emas! 🏆'
   };
 
   function getSmartFallback() {
@@ -62,55 +62,60 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ reply: getSmartFallback() });
   }
 
+  // 3. System Prompt AI (Agar Respon Gemini / Groq Sama Persis dengan Kunci)
   const systemPrompt = `Anda adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karakter: Sangat ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
 Aturan:
-1. Jawab pertanyaan anak secara ceria dan edukatif.
-2. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak (mainan lego, resep kue, sikat gigi, sepeda).
-3. Jika ditanya cara menyelesaikan permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", dan "Bintang!".
-Kunci Level:
-- Level 1: Maju 1 (3x), Bintang!
-- Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
-- Level 3: Maju 1 (2x), Kanan, Maju 1 (2x), Kanan, Maju 1, Bintang!
-- Level 4: Rute tangga selang-seling Kanan dan Kiri.
-- Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
-4. Jawablah singkat (2-3 kalimat), ceria, dan gunakan emoji seperti 🤖, ⭐, 🚀.`;
+1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak kecil.
+2. Jika ditanya cara menyelesaikan level permainan (Level 1 sampai 5), WAJIB memberikan urutan balok resmi bernomor berikut:
+
+- Level 1:
+  1. Maju 1, 2. Maju 1, 3. Maju 1, 4. Bintang!
+
+- Level 2:
+  1. Maju 1, 2. Maju 1, 3. Kanan, 4. Maju 1, 5. Maju 1, 6. Maju 1, 7. Bintang!
+
+- Level 3:
+  1. Kanan, 2. Maju 1, 3. Maju 1, 4. Kanan, 5. Maju 1, 6. Kiri, 7. Maju 1, 8. Maju 1, 9. Kiri, 10. Maju 1, 11. Maju 1, 12. Maju 1, 13. Maju 1, 14. Bintang!
+
+- Level 4:
+  1. Kanan, 2. Maju 1, 3. Maju 1, 4. Kiri, 5. Maju 1, 6. Maju 1, 7. Maju 1, 8. Kanan, 9. Maju 1, 10. Maju 1, 11. Maju 1, 12. Kiri, 13. Maju 1, 14. Bintang!
+
+- Level 5:
+  1. Maju 1 (5 kali), 2. Kanan, 3. Maju 1 (5 kali), 4. Kanan, 5. Maju 1 (4 kali), 6. Kanan, 7. Maju 1 (3 kali), 8. Kanan, 9. Maju 1 (1 kali), 10. Bintang!
+
+3. Format jawaban dibuat rapi per nomor agar anak SD mudah menirunya di palet balok. Gunakan emoji ceria seperti 🤖, ⭐, 🚀.`;
 
   const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
 
-  // Model prioritas resmi Groq yang aktif saat ini
-  const activeModels = [modelName, 'openai/gpt-oss-20b', 'openai/gpt-oss-120b'];
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.2,
+        max_tokens: 350
+      })
+    });
 
-  for (const m of activeModels) {
-    try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: m,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          temperature: 0.3,
-          max_tokens: 300
-        })
-      });
+    const data = await response.json();
 
-      const data = await response.json();
-
-      if (response.ok && data.choices?.[0]?.message?.content) {
-        return res.status(200).json({ reply: data.choices[0].message.content });
-      }
-
-      console.warn(`Model Groq ${m} gagal (${response.status}):`, data.error?.message || '');
-    } catch (err) {
-      console.warn(`Koneksi ke ${m} error:`, err);
+    if (response.ok && data.choices?.[0]?.message?.content) {
+      return res.status(200).json({ reply: data.choices[0].message.content });
     }
-  }
 
-  return res.status(200).json({ reply: getSmartFallback() });
+    console.warn('AI response not OK, beralih ke fallback:', response.status, data.error?.message || '');
+    return res.status(200).json({ reply: getSmartFallback() });
+  } catch (err) {
+    console.error('Fetch error:', err);
+    return res.status(200).json({ reply: getSmartFallback() });
+  }
 };
