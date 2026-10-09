@@ -8,13 +8,10 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
   }
 
-  // Konfigurasi Gateway (Otomatis membaca Groq dari Vercel)
-  const rawBaseURL = (process.env.AI_GATEWAY_BASE_URL || 'https://api.groq.com/openai/v1').trim();
-  const baseURL = rawBaseURL.replace(/\/+$/, '');
   const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
   const modelName = (process.env.AI_MODEL_NAME || 'llama-3.3-70b-versatile').trim();
 
-  // Kamus jawaban cadangan cerdas Kodi (jika kuota offline)
+  // Kamus jawaban cadangan darurat (aktif jika koneksi internet terputus)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -56,7 +53,9 @@ module.exports = async function handler(req, res) {
     return 'Halo sahabat kecil! Kodi siap menemanimu belajar koding. Yuk tanyakan hal seru seputar koding! 🤖⭐';
   }
 
+  // Jika kunci API belum terpasang di Vercel
   if (!apiKey) {
+    console.warn('AI_GATEWAY_API_KEY belum terpasang di Environment Variables');
     return res.status(200).json({ reply: getSmartFallback() });
   }
 
@@ -77,7 +76,8 @@ Kunci Level:
   const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
 
   try {
-    const endpoint = `${baseURL}/chat/completions`;
+    // Endpoint absolut resmi Groq
+    const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -102,7 +102,7 @@ Kunci Level:
       return res.status(200).json({ reply: data.choices[0].message.content });
     }
 
-    console.warn('Groq response not OK:', response.status, data);
+    console.warn('Groq response not OK:', response.status, JSON.stringify(data));
     return res.status(200).json({ reply: getSmartFallback() });
   } catch (err) {
     console.error('Fetch error ke Groq:', err);
