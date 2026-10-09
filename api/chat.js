@@ -8,9 +8,13 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
   }
 
-  const apiKey = (process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY || '').trim();
+  // Konfigurasi Gateway (Otomatis membaca Groq dari Vercel)
+  const rawBaseURL = (process.env.AI_GATEWAY_BASE_URL || 'https://api.groq.com/openai/v1').trim();
+  const baseURL = rawBaseURL.replace(/\/+$/, '');
+  const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
+  const modelName = (process.env.AI_MODEL_NAME || 'llama-3.3-70b-versatile').trim();
 
-  // Kamus jawaban cadangan cerdas Kodi
+  // Kamus jawaban cadangan cerdas Kodi (jika kuota offline)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -59,64 +63,49 @@ module.exports = async function handler(req, res) {
   const systemPrompt = `Anda adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karakter: Sangat ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
 Aturan:
-1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak.
-2. Jika ditanya cara menyelesaikan level permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", "Bintang!".
+1. Jawab pertanyaan anak secara ceria dan edukatif.
+2. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak (mainan lego, resep kue, sikat gigi, sepeda).
+3. Jika ditanya cara menyelesaikan permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", dan "Bintang!".
 Kunci Level:
 - Level 1: Maju 1 (3x), Bintang!
 - Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
 - Level 3: Maju 1 (2x), Kanan, Maju 1 (2x), Kanan, Maju 1, Bintang!
 - Level 4: Rute tangga selang-seling Kanan dan Kiri.
 - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
-3. Jawablah singkat (2-3 kalimat), ceria, dan gunakan emoji seperti 🤖, ⭐, 🚀.`;
+4. Jawablah singkat (2-3 kalimat), ceria, dan gunakan emoji seperti 🤖, ⭐, 🚀.`;
 
   const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
 
-  // Pasang batas waktu (Timeout) maksimal 8 detik
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
-
   try {
-    // Gunakan rute native Gemini resmi yang terbukti stabil untuk kunci AQ.
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const endpoint = `${baseURL}/chat/completions`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
-      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\n${userMessage}` }]
-          }
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
         ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 300
-        }
+        temperature: 0.3,
+        max_tokens: 300
       })
     });
 
-    clearTimeout(timeoutId);
     const data = await response.json();
 
-    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+    if (response.ok && data.choices?.[0]?.message?.content) {
+      return res.status(200).json({ reply: data.choices[0].message.content });
     }
 
-    console.warn('API mengembalikan respon tidak lengkap, gunakan fallback:', data);
+    console.warn('Groq response not OK:', response.status, data);
     return res.status(200).json({ reply: getSmartFallback() });
   } catch (err) {
-    clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      console.warn('Koneksi Google API melebihi 8 detik (Timeout dibatalkan).');
-    } else {
-      console.error('Fetch error:', err);
-    }
-    // Langsung berikan jawaban ramah anak seketika tanpa membebani Vercel
+    console.error('Fetch error ke Groq:', err);
     return res.status(200).json({ reply: getSmartFallback() });
   }
 };
