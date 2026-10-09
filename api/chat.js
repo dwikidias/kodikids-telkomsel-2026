@@ -9,9 +9,14 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
-  const modelName = (process.env.AI_MODEL_NAME || 'llama-3.3-70b-versatile').trim();
 
-  // Kamus jawaban cadangan darurat (aktif jika koneksi internet terputus)
+  // Gunakan model aktif resmi Groq terbaru
+  let modelName = (process.env.AI_MODEL_NAME || 'openai/gpt-oss-20b').trim();
+  if (modelName.includes('llama-3.3') || modelName.includes('llama-3.1')) {
+    modelName = 'openai/gpt-oss-20b';
+  }
+
+  // Kamus jawaban cadangan cerdas Kodi (jika kuota offline)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -53,9 +58,7 @@ module.exports = async function handler(req, res) {
     return 'Halo sahabat kecil! Kodi siap menemanimu belajar koding. Yuk tanyakan hal seru seputar koding! 🤖⭐';
   }
 
-  // Jika kunci API belum terpasang di Vercel
   if (!apiKey) {
-    console.warn('AI_GATEWAY_API_KEY belum terpasang di Environment Variables');
     return res.status(200).json({ reply: getSmartFallback() });
   }
 
@@ -75,37 +78,39 @@ Kunci Level:
 
   const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
 
-  try {
-    // Endpoint absolut resmi Groq
-    const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  // Model prioritas resmi Groq yang aktif saat ini
+  const activeModels = [modelName, 'openai/gpt-oss-20b', 'openai/gpt-oss-120b'];
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        temperature: 0.3,
-        max_tokens: 300
-      })
-    });
+  for (const m of activeModels) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: m,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          temperature: 0.3,
+          max_tokens: 300
+        })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok && data.choices?.[0]?.message?.content) {
-      return res.status(200).json({ reply: data.choices[0].message.content });
+      if (response.ok && data.choices?.[0]?.message?.content) {
+        return res.status(200).json({ reply: data.choices[0].message.content });
+      }
+
+      console.warn(`Model Groq ${m} gagal (${response.status}):`, data.error?.message || '');
+    } catch (err) {
+      console.warn(`Koneksi ke ${m} error:`, err);
     }
-
-    console.warn('Groq response not OK:', response.status, JSON.stringify(data));
-    return res.status(200).json({ reply: getSmartFallback() });
-  } catch (err) {
-    console.error('Fetch error ke Groq:', err);
-    return res.status(200).json({ reply: getSmartFallback() });
   }
+
+  return res.status(200).json({ reply: getSmartFallback() });
 };
