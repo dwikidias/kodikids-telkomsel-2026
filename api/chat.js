@@ -8,12 +8,18 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
   }
 
-  // 1. Konfigurasi Fleksibel AI Gateway / OpenAI-Compatible Provider
-  const baseURL = process.env.AI_GATEWAY_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/';
+  // Base URL resmi Google Gemini OpenAI endpoint
+  const rawBaseURL = (process.env.AI_GATEWAY_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai').trim();
+  const baseURL = rawBaseURL.replace(/\/+$/, '');
   const apiKey = (process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY || '').trim();
-  const modelName = process.env.AI_MODEL_NAME || 'gemini-1.5-flash';
 
-  // Kamus cadangan pintar Kodi (Resilience Fallback)
+  // Pastikan model mengarah ke model resmi gemini-3.8-flash
+  let modelName = (process.env.AI_MODEL_NAME || 'gemini-3.8-flash').trim();
+  if (modelName === 'gemini-3.7-flash' || modelName === 'gemini-1.5-flash') {
+    modelName = 'gemini-3.8-flash';
+  }
+
+  // Kamus jawaban cadangan cerdas (jika koneksi offline)
   const termAnswers = [
     {
       keywords: ['koding', 'coding', 'apa itu koding'],
@@ -34,11 +40,11 @@ module.exports = async function handler(req, res) {
   ];
 
   const levelAnswers = {
-    '1': 'Untuk Level 1: Susun balok: 1. Maju 1 (3x), lalu 2. Bintang! Semangat ya! 🤖⭐',
-    '2': 'Untuk Level 2: Susun balok: 1. Maju 1 (3x), 2. Kanan, 3. Maju 1 (3x), lalu 4. Bintang! 🚀',
-    '3': 'Untuk Level 3: Susun balok: 1. Maju 1 (2x), 2. Kanan, 3. Maju 1 (2x), 4. Kanan, 5. Maju 1, lalu 6. Bintang! ✨',
-    '4': 'Untuk Level 4: Rute tangga selang-seling Kanan dan Kiri melewati rintangan batu! 💡',
-    '5': 'Untuk Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!). 🏆'
+    '1': 'Untuk Level 1: Susun balok: 1. Maju 1, 2. Maju 1, 3. Maju 1, lalu 4. Bintang! Semangat ya! 🤖⭐',
+    '2': 'Untuk Level 2: Susun balok: Maju 1 (3x), belok Kanan, lalu Maju 1 (3x) menuju bintang, dan akhiri dengan Bintang! 🚀',
+    '3': 'Untuk Level 3: Maju 1 (2x), belok Kanan, Maju 1 (2x), belok Kanan lagi, lalu Maju 1 ke bintang! ✨',
+    '4': 'Untuk Level 4: Ikuti rute tangga berbelok Kanan dan Kiri secara bergantian melewati rintangan batu! 💡',
+    '5': 'Untuk Level 5: Ikuti lorong spiral dari luar memutar ke arah tengah sampai tiba tepat di bintang emas! 🏆'
   };
 
   function getSmartFallback() {
@@ -55,31 +61,28 @@ module.exports = async function handler(req, res) {
     return 'Halo sahabat kecil! Kodi siap menemanimu belajar koding. Yuk tanyakan hal seru seputar koding! 🤖⭐';
   }
 
-  // Jika API key belum terpasang, langsung berikan balasan ramah fallback
   if (!apiKey) {
     return res.status(200).json({ reply: getSmartFallback() });
   }
 
-  // 2. Struktur System Prompt KodiKids
-  const systemPrompt = `Anda adalah Kodi, robot maskot ceria pemandu koding untuk anak Sekolah Dasar (SD usia 6-12 tahun) di platform KodiKids.
+  const systemPrompt = `Anda adalah Kodi, robot maskot ceria pemandu koding anak SD di platform KodiKids.
 Karakter: Sangat ramah, bersahabat, selalu berbahasa Indonesia sederhana, dan penuh semangat.
-
-ATURAN BALOK KODING KODIKIDS:
-Hanya tersedia 4 balok: 'Maju 1', 'Kanan', 'Kiri', dan 'Bintang!'.
-
-PANDUAN MENJAWAB:
-1. Jika anak bertanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak (mainan lego, resep kue, sikat gigi, mengayuh sepeda).
-2. Jika anak bertanya cara menyelesaikan permainan atau meminta bantuan level (Level 1 sampai 5), berikan urutan balok bernomor yang jelas sesuai kunci resmi:
-   - Level 1: Maju 1 (3x), Bintang!
-   - Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
-   - Level 3: Maju 1 (2x), Kanan, Maju 1 (2x), Kanan, Maju 1, Bintang!
-   - Level 4: Rute tangga selang-seling Kanan dan Kiri.
-   - Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
+Aturan:
+1. Jika ditanya istilah koding (seperti apa itu koding, algoritma, bug, loop), jelaskan dengan analogi benda nyata anak (mainan lego, resep kue, sikat gigi, sepeda).
+2. Jika ditanya cara menyelesaikan permainan (Level 1 sampai 5), berikan urutan balok bernomor dari palet: "Maju 1", "Kanan", "Kiri", dan "Bintang!".
+Kunci Level:
+- Level 1: Maju 1 (3x), Bintang!
+- Level 2: Maju 1 (3x), Kanan, Maju 1 (3x), Bintang!
+- Level 3: Maju 1 (2x), Kanan, Maju 1 (2x), Kanan, Maju 1, Bintang!
+- Level 4: Rute tangga selang-seling Kanan dan Kiri.
+- Level 5: Rute spiral luar ke dalam (Maju 5x, Kanan, Maju 5x, Kanan, Maju 4x, Kanan, Maju 3x, Kanan, Maju 2x, Kanan, Maju 1x, Bintang!).
 3. Jawablah singkat (2-3 kalimat), ceria, dan gunakan emoji seperti 🤖, ⭐, 🚀.`;
 
-  // 3. Format Request Chat Completions (OpenAI-Compatible)
+  const userMessage = `Pemain saat ini sedang di Level ${currentLevel || 1}. Pertanyaan anak: "${message}"`;
+
   try {
-    const endpoint = `${baseURL.replace(/\/$/, '')}/chat/completions`;
+    const endpoint = `${baseURL}/chat/completions`;
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -91,7 +94,7 @@ PANDUAN MENJAWAB:
         model: modelName,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Pemain saat ini di Level ${currentLevel || 1}. Pertanyaan: "${message}"` }
+          { role: 'user', content: userMessage }
         ],
         temperature: 0.3,
         max_tokens: 300
@@ -100,16 +103,14 @@ PANDUAN MENJAWAB:
 
     const data = await response.json();
 
-    // 4. Parsing Response & Resilience Fallback
-    const aiReply = data.choices?.[0]?.message?.content;
-    if (response.ok && aiReply) {
-      return res.status(200).json({ reply: aiReply.trim() });
+    if (response.ok && data.choices?.[0]?.message?.content) {
+      return res.status(200).json({ reply: data.choices[0].message.content });
     }
 
-    console.warn('AI Gateway / OpenAI API status:', response.status, data.error?.message || '');
+    console.warn('OpenAI Compatibility endpoint response:', response.status, JSON.stringify(data));
     return res.status(200).json({ reply: getSmartFallback() });
   } catch (err) {
-    console.error('Fetch error:', err);
+    console.error('Fetch error ke gateway:', err);
     return res.status(200).json({ reply: getSmartFallback() });
   }
 };
