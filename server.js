@@ -63,8 +63,8 @@ app.use((err, req, res, next) => {
 });
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`KodiKids server berjalan di http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server KodiKids siap di http://0.0.0.0:${PORT}`);
     if (!process.env.GROQ_API_KEY) {
       console.warn('GROQ_API_KEY belum diisi: chat akan memakai jawaban fallback.');
     }
